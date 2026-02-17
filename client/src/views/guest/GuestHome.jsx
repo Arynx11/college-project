@@ -501,7 +501,7 @@ const GuestHome = () => {
                   disabled={isSearching}
                   sx={{ whiteSpace: "nowrap" }}
                 >
-                  Find Me
+                  Get Location
                 </Button>
               </Paper>
             </Grid>
