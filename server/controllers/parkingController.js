@@ -134,7 +134,7 @@ exports.createParking = async (req, res) => {
       }
       
       // Ensure type is set - default to 'private' if not provided
-      if (!req.body.type || !['government', 'private'].includes(req.body.type)) {
+      if (!req.body.type || !['government', 'private', 'public'].includes(req.body.type)) {
         req.body.type = 'private';
         console.log('Setting default type to "private" for operator');
       }

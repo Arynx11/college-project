@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -7,6 +7,9 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 // Leaflet CSS
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
+
+// Custom theme
+import theme from './theme/theme';
 
 // Layout components
 import Navbar, { AuthProvider } from './components/layout/Navbar';
@@ -28,18 +31,6 @@ import Login from './components/auth/Login';
 import Register from './components/auth/Register';
 import ForgotPassword from './components/auth/ForgotPassword';
 import ResetPassword from './components/auth/ResetPassword';
-
-// Create theme
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
-});
 
 function App() {
   return (
@@ -78,7 +69,7 @@ function App() {
                     } />
                     <Route path="/bookings" element={
                       <ProtectedRoute allowedRoles={['user']}>
-                        <UserDashboard />
+                        <Navigate to="/dashboard?tab=bookings" replace />
                       </ProtectedRoute>
                     } />
 

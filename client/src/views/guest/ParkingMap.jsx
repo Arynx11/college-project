@@ -12,6 +12,7 @@ import {
   CardContent,
   CardActions,
   Chip,
+  Stack,
 } from '@mui/material';
 import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet';
 import { Icon } from 'leaflet';
@@ -339,71 +340,168 @@ const ParkingMap = () => {
   }, [loading]);
 
   return (
-    <Box sx={{ height: '100vh', width: '100%', position: 'relative' }}>
-      <Container maxWidth="lg" sx={{ height: '100%', py: 4 }}>
-        <Grid container spacing={3} sx={{ height: '100%' }}>
+    <Box sx={{ minHeight: '100vh', width: '100%', position: 'relative', bgcolor: '#F9FAFB' }}>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        {/* Page Header */}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: '#111827' }}>
+            Find Parking
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5 }}>
+            Search nearby parking spots, get directions, and book your space.
+          </Typography>
+        </Box>
+
+        <Grid container spacing={3}>
+          {/* Left Sidebar — Search + Parking Spots */}
           <Grid item xs={12} md={4}>
             <Box sx={{
-              background: '#fff',
-              borderRadius: 2,
-              boxShadow: 2,
-              p: 2,
-              height: 'auto',
+              position: { md: 'sticky' },
+              top: { md: 80 },
+              maxHeight: { md: 'calc(100vh - 100px)' },
+              overflowY: { md: 'auto' },
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'flex-start',
+              gap: 2,
+              // Custom scrollbar
+              '&::-webkit-scrollbar': { width: 4 },
+              '&::-webkit-scrollbar-track': { background: 'transparent' },
+              '&::-webkit-scrollbar-thumb': { background: '#D1D5DB', borderRadius: 2 },
             }}>
-              <Typography variant="h4" component="h2" gutterBottom>
-                Find Available Parking
-              </Typography>
-              <Typography variant="body1" color="text.secondary" paragraph>
-                Enter your location or use your current location to find the nearest available parking spots and get directions.
-              </Typography>
-              <Paper sx={{ p: 2, mb: 2 }}>
-                <Grid container spacing={2} alignItems="center">
-                  <Grid item xs={12} sm={12} md={12} lg={12}>
-                    <TextField
-                      fullWidth
-                      label="Enter your location"
-                      value={searchLocation}
-                      onChange={(e) => setSearchLocation(e.target.value)}
-                      placeholder="e.g., 123 Main St, City, State"
-                      sx={{ mb: { xs: 2, sm: 0 } }}
-                    />
+              {/* Search Card */}
+              <Card sx={{
+                borderRadius: 3,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                border: '1px solid #E5E7EB',
+              }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>
+                    Search Location
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5, lineHeight: 1.6 }}>
+                    Enter an address or use your current location.
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    label="Enter your location"
+                    value={searchLocation}
+                    onChange={(e) => setSearchLocation(e.target.value)}
+                    placeholder="e.g., Connaught Place, Delhi"
+                    sx={{ mb: 2 }}
+                  />
+                  <Grid container spacing={1.5}>
+                    <Grid item xs={12}>
+                      <Button
+                        fullWidth variant="contained" onClick={handleSearch}
+                        disabled={isSearching} startIcon={<LocationOnIcon />}
+                        sx={{
+                          py: 1.2, fontWeight: 600,
+                          background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)',
+                          color: '#fff',
+                          '&:hover': { background: 'linear-gradient(135deg, #4338CA 0%, #4F46E5 100%)' },
+                        }}
+                      >
+                        Search
+                      </Button>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Button
+                        fullWidth variant="outlined" startIcon={<MyLocationIcon />}
+                        onClick={handleFindMyLocation} disabled={isSearching}
+                        sx={{ py: 1.2, fontWeight: 600 }}
+                      >
+                        {isSearching ? 'Locating...' : 'Use My Location'}
+                      </Button>
+                    </Grid>
                   </Grid>
-                  <Grid item xs={12} sm={6} md={6} lg={6}>
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      onClick={handleSearch}
-                      disabled={isSearching}
-                      sx={{ mb: { xs: 2, sm: 0 } }}
-                    >
-                      Search
-                    </Button>
-                  </Grid>
-                  <Grid item xs={12} sm={6} md={6} lg={6}>
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      startIcon={<MyLocationIcon />}
-                      onClick={handleFindMyLocation}
-                      disabled={isSearching}
-                    >
-                      Find Me
-                    </Button>
-                  </Grid>
-                </Grid>
-              </Paper>
+                </CardContent>
+              </Card>
+
+              {/* Parking Spots List — in sidebar */}
+              {allParkingSpots.length > 0 && (
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: '#374151', px: 0.5 }}>
+                    Available Spots ({allParkingSpots.length})
+                  </Typography>
+                  <Stack spacing={1.5}>
+                    {allParkingSpots.map((spot) => (
+                      <Card key={spot._id} sx={{
+                        border: '1px solid #E5E7EB',
+                        borderRadius: 2.5,
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                        transition: 'all 0.2s ease',
+                        cursor: 'pointer',
+                        '&:hover': {
+                          boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                          borderColor: '#6366F1',
+                        },
+                      }}
+                        onClick={() => handleParkingSelect(spot)}
+                      >
+                        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.88rem', flex: 1 }}>
+                              {spot.name}
+                            </Typography>
+                            <Chip
+                              label={spot.type.charAt(0).toUpperCase() + spot.type.slice(1)}
+                              color={spot.type === 'government' ? 'primary' : spot.type === 'private' ? 'secondary' : 'default'}
+                              size="small"
+                              sx={{ fontWeight: 600, fontSize: '0.68rem', height: 22 }}
+                            />
+                          </Box>
+                          <Stack spacing={0.5}>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <LocationOnIcon sx={{ fontSize: 15, mr: 0.5, color: '#6366F1' }} />
+                              <Typography variant="caption" color="text.secondary" noWrap>
+                                {spot.location?.address || 'No address'}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <LocalParkingIcon sx={{ fontSize: 15, mr: 0.5, color: '#10B981' }} />
+                                <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                                  {spot.availableSpots}/{spot.totalSpots}
+                                </Typography>
+                              </Box>
+                              <Typography variant="caption" sx={{ fontWeight: 700, color: '#4F46E5' }}>
+                                ₹{spot.pricePerHour}/hr
+                              </Typography>
+                            </Box>
+                          </Stack>
+                          <Button
+                            size="small" variant="contained" fullWidth
+                            disabled={spot.availableSpots <= 0}
+                            onClick={(e) => { e.stopPropagation(); handleBookNow(spot); }}
+                            sx={{
+                              mt: 1.5, py: 0.6, fontWeight: 600, fontSize: '0.78rem',
+                              background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)',
+                              color: '#fff',
+                              '&:hover': { background: 'linear-gradient(135deg, #4338CA 0%, #4F46E5 100%)' },
+                            }}
+                          >
+                            {spot.availableSpots > 0 ? 'Book Now' : 'Full'}
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </Stack>
+                </Box>
+              )}
             </Box>
           </Grid>
+
+          {/* Map */}
           <Grid item xs={12} md={8}>
-            <Box 
-              sx={{ 
+            <Box
+              sx={{
                 minHeight: '70vh',
                 height: '70vh',
                 width: '100%',
                 position: 'relative',
+                borderRadius: 3,
+                overflow: 'hidden',
+                border: '1px solid #E5E7EB',
                 '& .leaflet-container': {
                   minHeight: '70vh',
                   height: '100%',
@@ -434,25 +532,20 @@ const ParkingMap = () => {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   />
-                  {/* User location marker */}
                   {userLocation && (
-                    <Marker
-                      position={[userLocation.lat, userLocation.lng]}
-                      icon={userLocationIcon}
-                    >
+                    <Marker position={[userLocation.lat, userLocation.lng]} icon={userLocationIcon}>
                       <Popup>
                         <Typography variant="subtitle2">Your Location</Typography>
                       </Popup>
                     </Marker>
                   )}
-                  {/* Parking spot markers */}
                   {parkingSpots.map((spot) => (
                     <Marker
                       key={spot._id}
                       position={[spot.location.coordinates[1], spot.location.coordinates[0]]}
                       icon={
-                        spot.type === 'government' 
-                          ? governmentIcon 
+                        spot.type === 'government'
+                          ? governmentIcon
                           : spot.type === 'residential'
                             ? residentialIcon
                             : privateIcon
@@ -473,82 +566,11 @@ const ParkingMap = () => {
                     </Marker>
                   ))}
                   {selectedParking && startPoint && endPoint && (
-                    <Routing
-                      start={startPoint}
-                      end={endPoint}
-                    />
+                    <Routing start={startPoint} end={endPoint} />
                   )}
                 </MapContainer>
               )}
             </Box>
-            
-            {/* All Available Parking Spots */}
-            {allParkingSpots.length > 0 && (
-              <Paper sx={{ p: 2, mt: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                  All Available Parking Spots
-                </Typography>
-                <Grid container spacing={2}>
-                  {allParkingSpots.map((spot) => (
-                    <Grid item xs={12} sm={6} md={4} key={spot._id}>
-                      <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                        <CardContent>
-                          <Typography variant="h6" component="div" gutterBottom>
-                            {spot.name}
-                          </Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                            <LocationOnIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
-                            <Typography variant="body2" color="text.secondary">
-                              {spot.location?.address || 'No address provided'}
-                            </Typography>
-                          </Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                            <LocalParkingIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
-                            <Typography variant="body2" color="text.secondary">
-                              Available: {spot.availableSpots}/{spot.totalSpots} spots
-                            </Typography>
-                          </Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                            <LocalAtmIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
-                            <Typography variant="body2" color="text.secondary">
-                              ₹{spot.pricePerHour}/hour
-                            </Typography>
-                          </Box>
-                          <Box sx={{ mt: 1 }}>
-                            <Chip 
-                              label={spot.type.charAt(0).toUpperCase() + spot.type.slice(1)} 
-                              color={
-                                spot.type === 'government' ? 'primary' : 
-                                spot.type === 'private' ? 'secondary' : 
-                                'default'
-                              }
-                              size="small"
-                            />
-                          </Box>
-                        </CardContent>
-                        <CardActions>
-                          <Button 
-                            size="small" 
-                            onClick={() => handleParkingSelect(spot)}
-                          >
-                            View on Map
-                          </Button>
-                          <Button 
-                            size="small" 
-                            variant="contained" 
-                            color="primary"
-                            disabled={spot.availableSpots <= 0}
-                            onClick={() => handleBookNow(spot)}
-                          >
-                            {spot.availableSpots > 0 ? 'Book Now' : 'No Spots Available'}
-                          </Button>
-                        </CardActions>
-                      </Card>
-                    </Grid>
-                  ))}
-                </Grid>
-              </Paper>
-            )}
           </Grid>
         </Grid>
       </Container>
