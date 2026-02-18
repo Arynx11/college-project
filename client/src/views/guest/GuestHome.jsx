@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -8,32 +8,37 @@ import {
   Grid,
   Card,
   CardContent,
-  CardMedia,
   TextField,
   Paper,
   CircularProgress,
   CardActions,
   Chip,
+  Skeleton,
+  Stack,
+  alpha,
 } from "@mui/material";
 import {
   MapContainer,
   TileLayer,
   Marker,
   Popup,
-  Circle,
   useMap,
 } from "react-leaflet";
 import { Icon } from "leaflet";
 import L from "leaflet";
-import LocalParkingIcon from "@mui/icons-material/LocalParking";
 import SearchIcon from "@mui/icons-material/Search";
 import SecurityIcon from "@mui/icons-material/Security";
 import PaymentIcon from "@mui/icons-material/Payment";
 import MyLocationIcon from "@mui/icons-material/MyLocation";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import LocalAtmIcon from "@mui/icons-material/LocalAtm";
+import LocalParkingIcon from "@mui/icons-material/LocalParking";
+import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
+import SpeedIcon from "@mui/icons-material/Speed";
+import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import { API_BASE_URL } from "../../config/config";
 import { useAuth } from "../../components/layout/Navbar";
+import { colors } from "../../theme/theme";
 
 // Fix for default marker icons
 delete L.Icon.Default.prototype._getIconUrl;
@@ -69,7 +74,6 @@ const privateIcon = new Icon({
   shadowSize: [41, 41],
 });
 
-// Custom icon for user's location
 const userLocationIcon = new Icon({
   iconUrl:
     "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
@@ -80,89 +84,6 @@ const userLocationIcon = new Icon({
   popupAnchor: [1, -34],
   shadowSize: [41, 41],
 });
-
-// Function to generate parking spots around a given location
-const generateParkingSpots = (centerLat, centerLng) => {
-  // Convert degrees to kilometers (approximate)
-  const latToKm = 111.32;
-  const lngToKm = 111.32 * Math.cos((centerLat * Math.PI) / 180);
-
-  // Generate random offsets in kilometers (within 2km radius)
-  const generateOffset = () => (Math.random() - 0.5) * 4;
-
-  return [
-    {
-      _id: "1",
-      name: "Central Parking",
-      type: "government",
-      location: {
-        coordinates: [
-          centerLng + generateOffset() / lngToKm,
-          centerLat + generateOffset() / latToKm,
-        ],
-      },
-      availableSpots: 20,
-      totalSpots: 50,
-      pricePerHour: 5,
-    },
-    {
-      _id: "2",
-      name: "Downtown Parking",
-      type: "private",
-      location: {
-        coordinates: [
-          centerLng + generateOffset() / lngToKm,
-          centerLat + generateOffset() / latToKm,
-        ],
-      },
-      availableSpots: 15,
-      totalSpots: 30,
-      pricePerHour: 8,
-    },
-    {
-      _id: "3",
-      name: "City Center Parking",
-      type: "government",
-      location: {
-        coordinates: [
-          centerLng + generateOffset() / lngToKm,
-          centerLat + generateOffset() / latToKm,
-        ],
-      },
-      availableSpots: 25,
-      totalSpots: 40,
-      pricePerHour: 6,
-    },
-    {
-      _id: "4",
-      name: "Premium Parking",
-      type: "private",
-      location: {
-        coordinates: [
-          centerLng + generateOffset() / lngToKm,
-          centerLat + generateOffset() / latToKm,
-        ],
-      },
-      availableSpots: 10,
-      totalSpots: 20,
-      pricePerHour: 12,
-    },
-    {
-      _id: "5",
-      name: "Public Parking",
-      type: "government",
-      location: {
-        coordinates: [
-          centerLng + generateOffset() / lngToKm,
-          centerLat + generateOffset() / latToKm,
-        ],
-      },
-      availableSpots: 30,
-      totalSpots: 60,
-      pricePerHour: 4,
-    },
-  ];
-};
 
 // Fallback mock data for parking spots
 const fallbackParkingSpots = [
@@ -193,69 +114,6 @@ const fallbackParkingSpots = [
     totalSpots: 40,
     pricePerHour: 6,
   },
-  {
-    _id: "4",
-    name: "Premium Parking",
-    type: "private",
-    location: { coordinates: [77.5292, 28.5298] },
-    availableSpots: 10,
-    totalSpots: 20,
-    pricePerHour: 12,
-  },
-  {
-    _id: "5",
-    name: "Public Parking",
-    type: "government",
-    location: { coordinates: [77.5352, 28.5358] },
-    availableSpots: 30,
-    totalSpots: 60,
-    pricePerHour: 4,
-  },
-  {
-    _id: "6",
-    name: "Mall Parking",
-    type: "private",
-    location: { coordinates: [77.24, 28.625] },
-    availableSpots: 40,
-    totalSpots: 100,
-    pricePerHour: 7,
-  },
-  {
-    _id: "7",
-    name: "Station Parking",
-    type: "government",
-    location: { coordinates: [77.2, 28.63] },
-    availableSpots: 35,
-    totalSpots: 70,
-    pricePerHour: 5,
-  },
-  {
-    _id: "8",
-    name: "Business District Parking",
-    type: "private",
-    location: { coordinates: [77.21, 28.635] },
-    availableSpots: 20,
-    totalSpots: 40,
-    pricePerHour: 10,
-  },
-  {
-    _id: "9",
-    name: "Residential Parking",
-    type: "government",
-    location: { coordinates: [77.22, 28.64] },
-    availableSpots: 15,
-    totalSpots: 30,
-    pricePerHour: 4,
-  },
-  {
-    _id: "10",
-    name: "Shopping Center Parking",
-    type: "private",
-    location: { coordinates: [77.235, 28.645] },
-    availableSpots: 50,
-    totalSpots: 120,
-    pricePerHour: 6,
-  },
 ];
 
 // Component to automatically center map on location change
@@ -271,7 +129,7 @@ const MapCenterHandler = ({ center }) => {
   return null;
 };
 
-// Function to fetch real parking data from the server
+// Function to fetch parking data from the server
 const fetchParkingData = async (lat, lng, radius = 5) => {
   try {
     const response = await fetch(
@@ -285,16 +143,11 @@ const fetchParkingData = async (lat, lng, radius = 5) => {
       data.data &&
       data.data.parkings
     ) {
-      console.log(
-        `Fetched ${data.data.parkings.length} parking spaces from server`,
-      );
       return data.data.parkings;
     } else {
-      console.error("Error fetching parking data:", data);
       return [];
     }
   } catch (error) {
-    console.error("Failed to fetch parking data:", error);
     return [];
   }
 };
@@ -313,16 +166,11 @@ const fetchAllParkingSpots = async () => {
       data.data &&
       data.data.parkings
     ) {
-      console.log(
-        `Fetched ${data.data.parkings.length} parking spaces from server`,
-      );
       return data.data.parkings;
     } else {
-      console.error("Error fetching all parking data:", data);
       return [];
     }
   } catch (error) {
-    console.error("Failed to fetch all parking data:", error);
     return [];
   }
 };
@@ -334,29 +182,25 @@ const GuestHome = () => {
   const [parkingSpots, setParkingSpots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userLocation, setUserLocation] = useState(null);
-  const [locationError, setLocationError] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [allParkingSpots, setAllParkingSpots] = useState([]);
+  const [loadingSpots, setLoadingSpots] = useState(true);
 
   const updateParkingSpots = async (lat, lng) => {
     try {
-      // Fetch real parking data from the server
       const realParkingData = await fetchParkingData(lat, lng);
 
       if (realParkingData && realParkingData.length > 0) {
         setParkingSpots(realParkingData);
       } else {
-        console.log("No real parking data found, using fallback data");
         setParkingSpots(fallbackParkingSpots);
       }
     } catch (error) {
-      console.error("Error updating parking spots:", error);
       setParkingSpots(fallbackParkingSpots);
     }
   };
 
   const handleBookNow = (parking) => {
-    // If user is already logged in, redirect directly to dashboard
     if (isAuthenticated) {
       navigate("/dashboard", {
         state: {
@@ -364,7 +208,6 @@ const GuestHome = () => {
         },
       });
     } else {
-      // Otherwise redirect to login page
       navigate("/login", {
         state: {
           from: "/dashboard",
@@ -389,14 +232,11 @@ const GuestHome = () => {
           setLoading(false);
         },
         (error) => {
-          setLocationError(error.message);
-          console.error("Error getting location:", error);
           setIsSearching(false);
           setLoading(false);
         },
       );
     } else {
-      setLocationError("Geolocation is not supported by your browser");
       setIsSearching(false);
       setLoading(false);
     }
@@ -416,8 +256,10 @@ const GuestHome = () => {
   // Load all parking spots on mount
   useEffect(() => {
     async function loadAllParkingSpots() {
+      setLoadingSpots(true);
       const spots = await fetchAllParkingSpots();
       setAllParkingSpots(spots);
+      setLoadingSpots(false);
     }
 
     loadAllParkingSpots();
@@ -430,22 +272,28 @@ const GuestHome = () => {
 
   const features = [
     {
-      icon: <SearchIcon fontSize="large" color="primary" />,
+      icon: <SearchIcon sx={{ fontSize: 48 }} />,
       title: "Easy Search",
       description:
-        "Find available parking spaces near you with real-time availability.",
+        "Find available parking spaces near you with real-time availability updates.",
     },
     {
-      icon: <SecurityIcon fontSize="large" color="primary" />,
+      icon: <SecurityIcon sx={{ fontSize: 48 }} />,
       title: "Secure Booking",
       description:
-        "Book your parking spot in advance with secure payment processing.",
+        "Book your parking spot in advance with our secure payment processing system.",
     },
     {
-      icon: <PaymentIcon fontSize="large" color="primary" />,
+      icon: <PaymentIcon sx={{ fontSize: 48 }} />,
       title: "Flexible Payment",
-      description: "Multiple payment options available for your convenience.",
+      description: "Multiple payment options available for your convenience and ease.",
     },
+  ];
+
+  const stats = [
+    { icon: <DirectionsCarIcon />, value: "1000+", label: "Parking Spots" },
+    { icon: <EmojiEventsIcon />, value: "5000+", label: "Happy Users" },
+    { icon: <SpeedIcon />, value: "99%", label: "Uptime" },
   ];
 
   return (
@@ -453,75 +301,273 @@ const GuestHome = () => {
       {/* Hero Section */}
       <Box
         sx={{
-          bgcolor: "primary.main",
+          background: "linear-gradient(135deg, #4F46E5 0%, #7C3AED 40%, #9333EA 70%, #A855F7 100%)",
           color: "white",
-          py: 8,
+          py: { xs: 8, md: 12 },
           position: "relative",
+          overflow: "hidden",
+          // Multiple radial glow effects for depth
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background:
+              "radial-gradient(circle at 15% 40%, rgba(255,255,255,0.12) 0%, transparent 50%), radial-gradient(circle at 85% 60%, rgba(236,72,153,0.15) 0%, transparent 40%)",
+          },
+          "&::after": {
+            content: '""',
+            position: "absolute",
+            top: "-50%",
+            right: "-20%",
+            width: "600px",
+            height: "600px",
+            borderRadius: "50%",
+            background: "radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%)",
+          },
         }}
       >
-        <Container maxWidth="lg">
+        {/* Floating decorative shapes */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: "10%",
+            left: "5%",
+            width: 80,
+            height: 80,
+            borderRadius: "50%",
+            border: "2px solid rgba(255,255,255,0.08)",
+            animation: "float 6s ease-in-out infinite",
+          }}
+        />
+        <Box
+          sx={{
+            position: "absolute",
+            bottom: "15%",
+            right: "8%",
+            width: 120,
+            height: 120,
+            borderRadius: "50%",
+            background: "rgba(255,255,255,0.04)",
+            animation: "float 8s ease-in-out infinite 1s",
+          }}
+        />
+        <Box
+          sx={{
+            position: "absolute",
+            top: "60%",
+            left: "15%",
+            width: 40,
+            height: 40,
+            borderRadius: "12px",
+            border: "2px solid rgba(255,255,255,0.06)",
+            transform: "rotate(45deg)",
+            animation: "float 5s ease-in-out infinite 0.5s",
+          }}
+        />
+
+        <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1 }}>
           <Grid container spacing={4} alignItems="center">
             <Grid item xs={12} md={6}>
-              <Typography variant="h2" component="h1" gutterBottom>
-                Smart Parking Made Easy
+              {/* Eyebrow text */}
+              <Typography
+                variant="overline"
+                sx={{
+                  display: "inline-block",
+                  mb: 2,
+                  px: 2,
+                  py: 0.5,
+                  borderRadius: 5,
+                  background: "rgba(255,255,255,0.12)",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  fontSize: "0.75rem",
+                  fontWeight: 600,
+                  letterSpacing: "0.08em",
+                }}
+              >
+                🚗 #1 Smart Parking Platform
               </Typography>
-              <Typography variant="h5" paragraph>
-                Find and book parking spaces in real-time. Save time and avoid
-                the hassle.
+
+              <Typography
+                variant="h2"
+                component="h1"
+                sx={{
+                  fontWeight: 800,
+                  fontSize: { xs: "2.2rem", sm: "2.8rem", md: "3.5rem" },
+                  mb: 2,
+                  lineHeight: 1.15,
+                }}
+              >
+                Smart Parking{" "}
+                <br />
+                Made{" "}
+                <Box
+                  component="span"
+                  sx={{
+                    background: "rgba(255,255,255,0.2)",
+                    px: 2,
+                    py: 0.3,
+                    borderRadius: 3,
+                    backdropFilter: "blur(4px)",
+                    border: "1px solid rgba(255,255,255,0.15)",
+                  }}
+                >
+                  Easy
+                </Box>
               </Typography>
+              <Typography
+                variant="h6"
+                sx={{
+                  mb: 4,
+                  opacity: 0.85,
+                  fontWeight: 400,
+                  lineHeight: 1.7,
+                  maxWidth: 480,
+                  fontSize: { xs: "1rem", md: "1.15rem" },
+                }}
+              >
+                Find and book parking spaces in real-time. Save time,
+                avoid the hassle, and park smarter.
+              </Typography>
+
+              {/* Search Form — stacked layout */}
               <Paper
                 component="form"
                 onSubmit={handleSearch}
+                elevation={0}
                 sx={{
                   p: 2,
                   display: "flex",
-                  alignItems: "center",
-                  gap: 2,
-                  mt: 4,
+                  flexDirection: "column",
+                  gap: 1.5,
+                  borderRadius: 3,
+                  background: "rgba(255,255,255,0.97)",
+                  backdropFilter: "blur(12px)",
+                  boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+                  border: "1px solid rgba(255,255,255,0.3)",
                 }}
               >
                 <TextField
                   fullWidth
-                  placeholder="Enter location to find parking"
+                  placeholder="Enter location to find parking..."
                   value={searchLocation}
                   onChange={(e) => setSearchLocation(e.target.value)}
-                />
-                <Button
-                  type="submit"
-                  variant="contained"
-                  color="secondary"
-                  size="large"
-                >
-                  Search
-                </Button>
-                <Button
                   variant="outlined"
-                  startIcon={<MyLocationIcon />}
-                  onClick={handleFindMyLocation}
-                  disabled={isSearching}
-                  sx={{ whiteSpace: "nowrap" }}
-                >
-                  Find Me
-                </Button>
+                  InputProps={{
+                    startAdornment: (
+                      <Box sx={{ mr: 1, display: "flex", color: colors.grey[400] }}>
+                        <SearchIcon />
+                      </Box>
+                    ),
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 2.5,
+                      backgroundColor: colors.grey[50],
+                      fontSize: "0.95rem",
+                      "& fieldset": {
+                        borderColor: colors.grey[200],
+                      },
+                      "&:hover fieldset": {
+                        borderColor: colors.primary.light,
+                      },
+                      "&.Mui-focused fieldset": {
+                        borderColor: colors.primary.main,
+                        borderWidth: 2,
+                      },
+                    },
+                  }}
+                />
+                <Stack direction="row" spacing={1}>
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    startIcon={<SearchIcon />}
+                    sx={{
+                      flex: 1,
+                      py: 1.2,
+                      borderRadius: 2.5,
+                      background: colors.primary.gradient,
+                      fontSize: "0.9rem",
+                      fontWeight: 600,
+                      boxShadow: "0 4px 14px rgba(99, 102, 241, 0.35)",
+                      "&:hover": {
+                        boxShadow: "0 6px 20px rgba(99, 102, 241, 0.45)",
+                      },
+                    }}
+                  >
+                    Search
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={<MyLocationIcon />}
+                    onClick={handleFindMyLocation}
+                    disabled={isSearching}
+                    sx={{
+                      py: 1.2,
+                      px: 2.5,
+                      borderRadius: 2.5,
+                      borderColor: colors.grey[300],
+                      color: colors.primary.main,
+                      fontWeight: 600,
+                      fontSize: "0.85rem",
+                      "&:hover": {
+                        borderColor: colors.primary.main,
+                        background: alpha(colors.primary.main, 0.06),
+                      },
+                    }}
+                  >
+                    {isSearching ? "Finding..." : "Locate Me"}
+                  </Button>
+                </Stack>
               </Paper>
+
+              {/* Stats */}
+              <Stack
+                direction="row"
+                spacing={{ xs: 3, md: 5 }}
+                sx={{
+                  mt: 5,
+                  pt: 4,
+                  borderTop: "1px solid rgba(255,255,255,0.15)",
+                }}
+              >
+                {stats.map((stat, index) => (
+                  <Box key={index} sx={{ textAlign: "center" }}>
+                    <Box sx={{ mb: 0.5, opacity: 0.8 }}>{stat.icon}</Box>
+                    <Typography
+                      variant="h4"
+                      sx={{ fontWeight: 800, mb: 0.3, fontSize: { xs: "1.5rem", md: "2rem" } }}
+                    >
+                      {stat.value}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{ opacity: 0.7, fontWeight: 500, fontSize: "0.8rem" }}
+                    >
+                      {stat.label}
+                    </Typography>
+                  </Box>
+                ))}
+              </Stack>
             </Grid>
+
             <Grid item xs={12} md={6}>
               <Box
                 sx={{
-                  minHeight: "70vh",
-                  height: "70vh",
+                  minHeight: { xs: "400px", md: "500px" },
+                  height: { xs: "400px", md: "500px" },
                   width: "100%",
                   position: "relative",
-                  borderRadius: 2,
+                  borderRadius: 4,
                   overflow: "hidden",
+                  boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
                   "& .leaflet-container": {
-                    minHeight: "70vh",
                     height: "100%",
                     width: "100%",
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    zIndex: 1,
+                    borderRadius: 4,
                   },
                 }}
               >
@@ -531,8 +577,12 @@ const GuestHome = () => {
                     justifyContent="center"
                     alignItems="center"
                     height="100%"
+                    sx={{
+                      background: "rgba(255,255,255,0.1)",
+                      backdropFilter: "blur(10px)",
+                    }}
                   >
-                    <CircularProgress />
+                    <CircularProgress sx={{ color: "white" }} />
                   </Box>
                 ) : (
                   <MapContainer
@@ -541,9 +591,6 @@ const GuestHome = () => {
                     style={{ height: "100%", width: "100%" }}
                     zoomControl={true}
                     scrollWheelZoom={true}
-                    whenCreated={(map) => {
-                      map.invalidateSize();
-                    }}
                   >
                     <TileLayer
                       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -556,7 +603,6 @@ const GuestHome = () => {
                           : null
                       }
                     />
-                    {/* User location marker */}
                     {userLocation && (
                       <Marker
                         position={[userLocation.lat, userLocation.lng]}
@@ -569,7 +615,6 @@ const GuestHome = () => {
                         </Popup>
                       </Marker>
                     )}
-                    {/* Parking spot markers */}
                     {(parkingSpots.length > 0
                       ? parkingSpots
                       : fallbackParkingSpots
@@ -591,15 +636,10 @@ const GuestHome = () => {
                             {spot.name}
                           </Typography>
                           <Typography variant="body2">
-                            Type:{" "}
-                            {spot.type.charAt(0).toUpperCase() +
-                              spot.type.slice(1)}
-                          </Typography>
-                          <Typography variant="body2">
                             Available: {spot.availableSpots}/{spot.totalSpots}
                           </Typography>
                           <Typography variant="body2">
-                            Price: ${spot.pricePerHour}/hour
+                            ₹{spot.pricePerHour}/hour
                           </Typography>
                           <Button
                             variant="contained"
@@ -622,17 +662,58 @@ const GuestHome = () => {
       </Box>
 
       {/* Features Section */}
-      <Container maxWidth="lg" sx={{ py: 8 }}>
-        <Typography variant="h3" component="h2" align="center" gutterBottom>
+      <Container maxWidth="lg" sx={{ py: 10 }}>
+        <Typography
+          variant="h3"
+          component="h2"
+          align="center"
+          gutterBottom
+          sx={{ fontWeight: 700, mb: 2 }}
+        >
           Why Choose ParkEase?
         </Typography>
-        <Grid container spacing={4} sx={{ mt: 4 }}>
+        <Typography
+          variant="h6"
+          align="center"
+          color="text.secondary"
+          sx={{ mb: 6, maxWidth: 600, mx: "auto" }}
+        >
+          Experience the future of parking with our innovative features designed
+          for your convenience
+        </Typography>
+        <Grid container spacing={4} sx={{ mt: 2 }}>
           {features.map((feature, index) => (
             <Grid item xs={12} md={4} key={index}>
-              <Card sx={{ height: "100%" }}>
-                <CardContent sx={{ textAlign: "center" }}>
-                  <Box sx={{ mb: 2 }}>{feature.icon}</Box>
-                  <Typography variant="h5" component="h3" gutterBottom>
+              <Card
+                sx={{
+                  height: "100%",
+                  textAlign: "center",
+                  p: 3,
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    transform: "translateY(-8px)",
+                  },
+                }}
+              >
+                <CardContent>
+                  <Box
+                    sx={{
+                      mb: 3,
+                      display: "inline-flex",
+                      p: 2,
+                      borderRadius: 3,
+                      background: `linear-gradient(135deg, ${alpha(colors.primary.main, 0.1)} 0%, ${alpha(colors.secondary.main, 0.1)} 100%)`,
+                      color: colors.primary.main,
+                    }}
+                  >
+                    {feature.icon}
+                  </Box>
+                  <Typography
+                    variant="h5"
+                    component="h3"
+                    gutterBottom
+                    sx={{ fontWeight: 600 }}
+                  >
                     {feature.title}
                   </Typography>
                   <Typography variant="body1" color="text.secondary">
@@ -646,88 +727,155 @@ const GuestHome = () => {
       </Container>
 
       {/* All Available Parking Spots Section */}
-      {allParkingSpots.length > 0 && (
-        <Container maxWidth="lg" sx={{ py: 6 }}>
-          <Typography variant="h4" component="h2" gutterBottom>
-            All Available Parking Spots
+      <Box sx={{ bgcolor: colors.background.default, py: 10 }}>
+        <Container maxWidth="lg">
+          <Typography
+            variant="h4"
+            component="h2"
+            gutterBottom
+            sx={{ fontWeight: 700, mb: 4 }}
+          >
+            Available Parking Spots
           </Typography>
-          <Grid container spacing={3}>
-            {allParkingSpots.map((spot) => (
-              <Grid item xs={12} sm={6} md={4} key={spot._id}>
-                <Card
-                  sx={{
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <CardContent>
-                    <Typography variant="h6" component="div" gutterBottom>
-                      {spot.name}
-                    </Typography>
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                      <LocationOnIcon
-                        fontSize="small"
-                        sx={{ mr: 1, color: "text.secondary" }}
-                      />
-                      <Typography variant="body2" color="text.secondary">
-                        {spot.location?.address || "No address provided"}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                      <LocalParkingIcon
-                        fontSize="small"
-                        sx={{ mr: 1, color: "text.secondary" }}
-                      />
-                      <Typography variant="body2" color="text.secondary">
-                        Available: {spot.availableSpots}/{spot.totalSpots} spots
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                      <LocalAtmIcon
-                        fontSize="small"
-                        sx={{ mr: 1, color: "text.secondary" }}
-                      />
-                      <Typography variant="body2" color="text.secondary">
-                        ₹{spot.pricePerHour}/hour
-                      </Typography>
-                    </Box>
-                    <Box sx={{ mt: 1 }}>
-                      <Chip
-                        label={
-                          spot.type.charAt(0).toUpperCase() + spot.type.slice(1)
-                        }
-                        color={
-                          spot.type === "government"
-                            ? "primary"
-                            : spot.type === "private"
-                              ? "secondary"
-                              : "default"
-                        }
-                        size="small"
-                      />
-                    </Box>
-                  </CardContent>
-                  <CardActions>
-                    <Button
-                      size="small"
-                      variant="contained"
-                      color="primary"
-                      disabled={spot.availableSpots <= 0}
-                      onClick={() => handleBookNow(spot)}
-                    >
-                      {spot.availableSpots > 0
-                        ? "Book Now"
-                        : "No Spots Available"}
-                    </Button>
-                  </CardActions>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+
+          {loadingSpots ? (
+            <Grid container spacing={3}>
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Grid item xs={12} sm={6} md={4} key={i}>
+                  <Card>
+                    <CardContent>
+                      <Skeleton variant="text" width="60%" height={32} />
+                      <Skeleton variant="text" width="90%" />
+                      <Skeleton variant="text" width="70%" />
+                      <Skeleton variant="rectangular" height={40} sx={{ mt: 2 }} />
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          ) : allParkingSpots.length > 0 ? (
+            <Grid container spacing={3}>
+              {allParkingSpots.map((spot) => (
+                <Grid item xs={12} sm={6} md={4} key={spot._id}>
+                  <Card
+                    sx={{
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      position: "relative",
+                      overflow: "visible",
+                    }}
+                  >
+                    <CardContent sx={{ pb: 1 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                          mb: 2,
+                        }}
+                      >
+                        <Typography
+                          variant="h6"
+                          component="div"
+                          sx={{ fontWeight: 600 }}
+                        >
+                          {spot.name}
+                        </Typography>
+                        <Chip
+                          label={
+                            spot.type.charAt(0).toUpperCase() +
+                            spot.type.slice(1)
+                          }
+                          color={
+                            spot.type === "government"
+                              ? "primary"
+                              : spot.type === "private"
+                                ? "secondary"
+                                : "default"
+                          }
+                          size="small"
+                          sx={{ fontWeight: 600 }}
+                        />
+                      </Box>
+
+                      <Stack spacing={1.5}>
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <LocationOnIcon
+                            fontSize="small"
+                            sx={{ mr: 1, color: "text.secondary" }}
+                          />
+                          <Typography variant="body2" color="text.secondary">
+                            {spot.location?.address || "Location available"}
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <LocalParkingIcon
+                            fontSize="small"
+                            sx={{ mr: 1, color: "text.secondary" }}
+                          />
+                          <Typography variant="body2" color="text.secondary">
+                            <strong>
+                              {spot.availableSpots}/{spot.totalSpots}
+                            </strong>{" "}
+                            spots available
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <LocalAtmIcon
+                            fontSize="small"
+                            sx={{ mr: 1, color: "text.secondary" }}
+                          />
+                          <Typography variant="h6" color="primary">
+                            ₹{spot.pricePerHour}
+                            <Typography
+                              component="span"
+                              variant="body2"
+                              color="text.secondary"
+                            >
+                              /hour
+                            </Typography>
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    </CardContent>
+
+                    <CardActions sx={{ p: 2, pt: 0 }}>
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        color="primary"
+                        disabled={spot.availableSpots <= 0}
+                        onClick={() => handleBookNow(spot)}
+                        sx={{ py: 1.25 }}
+                      >
+                        {spot.availableSpots > 0
+                          ? "Book Now"
+                          : "No Spots Available"}
+                      </Button>
+                    </CardActions>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          ) : (
+            <Paper
+              sx={{
+                p: 6,
+                textAlign: "center",
+                background: "white",
+              }}
+            >
+              <Typography variant="h6" color="text.secondary">
+                No parking spots available at the moment
+              </Typography>
+            </Paper>
+          )}
         </Container>
-      )}
+      </Box>
     </Box>
   );
 };

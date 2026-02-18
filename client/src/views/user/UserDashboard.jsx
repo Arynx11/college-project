@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -203,8 +203,17 @@ const UserDashboard = () => {
     return 'N/A';
   };
   
+  // URL params — support /dashboard?tab=bookings to auto-switch tab
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+
   // State variables
-  const [value, setValue] = useState(0); // For tab navigation
+  const [value, setValue] = useState(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'bookings') return 1;
+    if (tabParam === 'profile') return 2;
+    return 0;
+  });
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState(null);
   const [activeBookings, setActiveBookings] = useState([]);
@@ -217,6 +226,10 @@ const UserDashboard = () => {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+
+  // Cancel booking dialog state
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cancelBookingId, setCancelBookingId] = useState(null);
   
   // Form states
   const [bookingForm, setBookingForm] = useState({
@@ -581,22 +594,27 @@ const UserDashboard = () => {
     }
   };
 
-  // Cancel booking
-  const handleCancelBooking = async (bookingId) => {
-    if (window.confirm('Are you sure you want to cancel this booking?')) {
-      try {
-        const response = await userService.cancelBooking(bookingId);
-        
-        if (response && response.data) {
-          showNotification('Booking cancelled successfully', 'success');
-          
-          // Refresh bookings using the deduplication function
-          await fetchBookings();
-        }
-      } catch (error) {
-        console.error('Error cancelling booking:', error);
-        showNotification(error.message || 'Failed to cancel booking', 'error');
+  // Cancel booking — opens confirmation dialog
+  const handleCancelBooking = (bookingId) => {
+    setCancelBookingId(bookingId);
+    setCancelDialogOpen(true);
+  };
+
+  // Confirm cancel booking — actual API call
+  const confirmCancelBooking = async () => {
+    setCancelDialogOpen(false);
+    try {
+      const response = await userService.cancelBooking(cancelBookingId);
+      
+      if (response && response.data) {
+        showNotification('Booking cancelled successfully', 'success');
+        await fetchBookings();
       }
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      showNotification(error.message || 'Failed to cancel booking', 'error');
+    } finally {
+      setCancelBookingId(null);
     }
   };
 
@@ -674,9 +692,14 @@ const UserDashboard = () => {
         {/* Find Parking Tab */}
         <TabPanel value={value} index={0}>
           <Box sx={{ mb: 3 }}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>Find Parking Near You</Typography>
+            <Card sx={{ overflow: 'visible' }}>
+              <CardContent sx={{ p: 3 }}>
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, mb: 0.5 }}>
+                  Find Parking Near You
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
+                  Use your current location or search by radius to discover available spots.
+                </Typography>
                 
                 <Grid container spacing={2} alignItems="center">
                   <Grid item xs={12} sm={6} md={3}>
@@ -687,6 +710,11 @@ const UserDashboard = () => {
                       onClick={handleGetCurrentLocation}
                       fullWidth
                       disabled={isSearching}
+                      sx={{
+                        py: 1.3,
+                        fontWeight: 600,
+                        color: '#fff',
+                      }}
                     >
                       {isSearching ? 'Locating...' : 'Use My Location'}
                     </Button>
@@ -712,6 +740,7 @@ const UserDashboard = () => {
                       startIcon={<FilterListIcon />}
                       onClick={() => setFiltersOpen(true)}
                       fullWidth
+                      sx={{ py: 1.3, fontWeight: 600 }}
                     >
                       Filters {filters.vehicleType || filters.features.length > 0 ? `(${
                         (filters.vehicleType ? 1 : 0) + filters.features.length
@@ -721,11 +750,23 @@ const UserDashboard = () => {
                   <Grid item xs={12} sm={6} md={3}>
                     <Button
                       variant="contained"
-                      color="secondary"
                       startIcon={<SearchIcon />}
                       onClick={() => userLocation && fetchNearbyParkingLots(userLocation.lat, userLocation.lng)}
                       fullWidth
                       disabled={!userLocation || isSearching}
+                      sx={{
+                        py: 1.3,
+                        fontWeight: 600,
+                        background: 'linear-gradient(135deg, #4F46E5 0%, #6366F1 100%)',
+                        color: '#fff',
+                        '&:hover': {
+                          background: 'linear-gradient(135deg, #4338CA 0%, #4F46E5 100%)',
+                        },
+                        '&.Mui-disabled': {
+                          background: '#E5E7EB',
+                          color: '#9CA3AF',
+                        },
+                      }}
                     >
                       {isSearching ? 'Searching...' : 'Search Parking'}
                     </Button>
@@ -733,9 +774,10 @@ const UserDashboard = () => {
                   <Grid item xs={12} sm={6} md={3}>
                     <Button
                       variant="outlined"
-                      color="info"
+                      color="primary"
                       onClick={fetchAllParkingLots}
                       fullWidth
+                      sx={{ py: 1.3, fontWeight: 600 }}
                     >
                       Show All Parking
                     </Button>
@@ -1411,6 +1453,46 @@ const UserDashboard = () => {
             <Button onClick={() => setPaymentDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleProcessPayment} variant="contained" color="primary">
               Pay Now
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Cancel Booking Confirmation Dialog */}
+        <Dialog
+          open={cancelDialogOpen}
+          onClose={() => setCancelDialogOpen(false)}
+          PaperProps={{
+            sx: { borderRadius: 3, px: 1, maxWidth: 400 }
+          }}
+        >
+          <DialogTitle sx={{ fontWeight: 700, pb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{
+              width: 40, height: 40, borderRadius: '50%',
+              bgcolor: '#FEE2E2', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <InfoIcon sx={{ color: '#EF4444', fontSize: 22 }} />
+            </Box>
+            Cancel Booking
+          </DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.7 }}>
+              Are you sure you want to cancel this booking? This action cannot be undone and any payment will be refunded as per our cancellation policy.
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ pb: 2.5, px: 3 }}>
+            <Button
+              onClick={() => setCancelDialogOpen(false)}
+              sx={{ fontWeight: 600, color: 'text.secondary' }}
+            >
+              Keep Booking
+            </Button>
+            <Button
+              onClick={confirmCancelBooking}
+              variant="contained"
+              color="error"
+              sx={{ fontWeight: 600, borderRadius: 2, px: 3 }}
+            >
+              Yes, Cancel
             </Button>
           </DialogActions>
         </Dialog>
