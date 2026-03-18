@@ -2,6 +2,8 @@ const dotenv = require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./swagger');
 const config = require('./config/config');
 const connectDB = require('./config/database');
 
@@ -34,6 +36,20 @@ app.get('/health', (req, res) => {
         timestamp: new Date().toISOString(),
         environment: config.server.env
     });
+});
+
+// Swagger API Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: 'ParkEase API Docs',
+    swaggerOptions: {
+        persistAuthorization: true, // remembers JWT between page refreshes
+    },
+}));
+
+// Raw OpenAPI JSON (useful for Postman import)
+app.get('/api-docs.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
 });
 
 // API Routes

@@ -784,6 +784,7 @@ const ResidentialDashboard = () => {
                       <TableCell>Parking Space</TableCell>
                       <TableCell>User</TableCell>
                       <TableCell>Vehicle Details</TableCell>
+                      <TableCell>Requested At</TableCell>
                       <TableCell>Start Time</TableCell>
                       <TableCell>End Time</TableCell>
                       <TableCell>Amount</TableCell>
@@ -808,6 +809,7 @@ const ResidentialDashboard = () => {
                               Type: {getVehicleType(booking)}
                             </Typography>
                           </TableCell>
+                          <TableCell>{booking.createdAt ? new Date(booking.createdAt).toLocaleString() : '—'}</TableCell>
                           <TableCell>{new Date(booking.startTime).toLocaleString()}</TableCell>
                           <TableCell>{new Date(booking.endTime).toLocaleString()}</TableCell>
                           <TableCell>₹{booking.totalPrice?.toFixed(2) || '0.00'}</TableCell>
@@ -837,6 +839,7 @@ const ResidentialDashboard = () => {
                       <TableCell>User</TableCell>
                       <TableCell>Vehicle Number</TableCell>
                       <TableCell>Parking Space</TableCell>
+                      <TableCell>Requested At</TableCell>
                       <TableCell>Start Time</TableCell>
                       <TableCell>End Time</TableCell>
                       <TableCell>Total Price</TableCell>
@@ -853,10 +856,11 @@ const ResidentialDashboard = () => {
                           {getVehicleNumber(booking)}
                         </TableCell>
                         <TableCell>
-                          {typeof booking.parking === 'object' ? booking.parking?.name : 
-                           typeof booking.parkingSpace === 'object' ? booking.parkingSpace?.name : 
+                          {typeof booking.parking === 'object' ? booking.parking?.name :
+                           typeof booking.parkingSpace === 'object' ? booking.parkingSpace?.name :
                            booking.parkingSpace || 'Unknown'}
                         </TableCell>
+                        <TableCell>{booking.createdAt ? new Date(booking.createdAt).toLocaleString() : '—'}</TableCell>
                         <TableCell>{new Date(booking.startTime).toLocaleString()}</TableCell>
                         <TableCell>{new Date(booking.endTime).toLocaleString()}</TableCell>
                         <TableCell>₹{booking.totalPrice && typeof booking.totalPrice === 'number' ? booking.totalPrice.toFixed(2) : booking.amount && typeof booking.amount === 'number' ? booking.amount.toFixed(2) : '0.00'}</TableCell>

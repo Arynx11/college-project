@@ -859,44 +859,49 @@ const OperatorDashboard = () => {
           ) : (
             <>
               {/* Pending Bookings */}
-              <Typography variant="h6" gutterBottom sx={{ mt: 3 }}>Pending Bookings</Typography>
-              <TableContainer component={Paper} sx={{ mb: 4 }}>
-                <Table>
+              <Typography variant="h6" gutterBottom sx={{ mt: 3, fontWeight: 700 }}>Pending Bookings</Typography>
+              <TableContainer component={Paper} elevation={1} sx={{ mb: 4, overflowX: 'auto', borderRadius: 2 }}>
+                <Table size="small">
                   <TableHead>
-                    <TableRow>
-                      <TableCell>User</TableCell>
-                      <TableCell>Parking Space</TableCell>
-                      <TableCell>Vehicle Details</TableCell>
-                      <TableCell>Start Time</TableCell>
-                      <TableCell>End Time</TableCell>
-                      <TableCell>Total Price</TableCell>
-                      <TableCell>Actions</TableCell>
+                    <TableRow sx={{ backgroundColor: 'grey.50' }}>
+                      <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>User</TableCell>
+                      <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Parking Space</TableCell>
+                      <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Vehicle</TableCell>
+                      <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Booking Slot</TableCell>
+                      <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Price</TableCell>
+                      <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {pendingBookings.map((booking) => (
-                      <TableRow key={booking._id || booking.id}>
-                        <TableCell>{booking.user?.name || 'N/A'}</TableCell>
-                        <TableCell>{booking.parking?.name || 'Unknown'}</TableCell>
-                        <TableCell>
-                          <Typography variant="body2">
-                            Number: {getVehicleNumber(booking)}
-                          </Typography>
-                          <Typography variant="body2" color="textSecondary">
-                            Type: {getVehicleType(booking)}
+                      <TableRow key={booking._id || booking.id} hover sx={{ '&:last-child td': { border: 0 } }}>
+                        <TableCell sx={{ py: 1.5 }}>
+                          <Typography variant="body2" fontWeight={600} noWrap>{booking.user?.name || 'N/A'}</Typography>
+                        </TableCell>
+                        <TableCell sx={{ py: 1.5 }}>
+                          <Typography variant="body2" fontWeight={600} noWrap>{booking.parking?.name || 'Unknown'}</Typography>
+                          {booking.createdAt && (
+                            <Typography variant="caption" color="text.secondary" display="block">
+                              Requested: {new Date(booking.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell sx={{ py: 1.5 }}>
+                          <Typography variant="body2" noWrap>{getVehicleNumber(booking)}</Typography>
+                          <Typography variant="caption" color="text.secondary">{getVehicleType(booking)}</Typography>
+                        </TableCell>
+                        <TableCell sx={{ py: 1.5 }}>
+                          <Typography variant="body2" noWrap>{new Date(booking.startTime).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}</Typography>
+                          <Typography variant="caption" color="text.secondary" noWrap>
+                            &rarr; {new Date(booking.endTime).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}
                           </Typography>
                         </TableCell>
-                        <TableCell>{new Date(booking.startTime).toLocaleString()}</TableCell>
-                        <TableCell>{new Date(booking.endTime).toLocaleString()}</TableCell>
-                        <TableCell>₹{booking.totalPrice?.toFixed(2) || '0.00'}</TableCell>
-                        <TableCell>
-                          <Button
-                            variant="contained"
-                            color="primary"
-                            size="small"
-                            onClick={() => handleOpenApprovalModal(booking)}
-                            sx={{ mr: 1 }}
-                          >
+                        <TableCell sx={{ py: 1.5, whiteSpace: 'nowrap' }}>
+                          <Typography variant="body2" fontWeight={600}>₹{booking.totalPrice?.toFixed(2) || '0.00'}</Typography>
+                        </TableCell>
+                        <TableCell sx={{ py: 1.5 }}>
+                          <Button variant="contained" color="primary" size="small"
+                            onClick={() => handleOpenApprovalModal(booking)}>
                             Review
                           </Button>
                         </TableCell>
@@ -907,48 +912,54 @@ const OperatorDashboard = () => {
               </TableContainer>
               
               {/* All Bookings */}
-              <Typography variant="h6" gutterBottom>All Bookings</Typography>
-              <TableContainer component={Paper}>
-                <Table>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>All Bookings</Typography>
+              <TableContainer component={Paper} elevation={1} sx={{ overflowX: 'auto', borderRadius: 2 }}>
+                <Table size="small">
                   <TableHead>
-                    <TableRow>
-                      <TableCell>User</TableCell>
-                      <TableCell>Vehicle Number</TableCell>
-                      <TableCell>Parking Space</TableCell>
-                      <TableCell>Vehicle Details</TableCell>
-                      <TableCell>Start Time</TableCell>
-                      <TableCell>End Time</TableCell>
-                      <TableCell>Total Price</TableCell>
-                      <TableCell>Status</TableCell>
+                    <TableRow sx={{ backgroundColor: 'grey.50' }}>
+                      <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>User</TableCell>
+                      <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Parking Space</TableCell>
+                      <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Vehicle</TableCell>
+                      <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Booking Slot</TableCell>
+                      <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Price</TableCell>
+                      <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Status</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {bookings.map((booking) => (
-                      <TableRow key={booking._id || booking.id}>
-                        <TableCell>{booking.user?.name || 'N/A'}</TableCell>
-                        <TableCell>
-                          {getVehicleNumber(booking)}
+                      <TableRow key={booking._id || booking.id} hover sx={{ '&:last-child td': { border: 0 } }}>
+                        <TableCell sx={{ py: 1.5 }}>
+                          <Typography variant="body2" fontWeight={600} noWrap>{booking.user?.name || 'N/A'}</Typography>
                         </TableCell>
-                        <TableCell>{booking.parking?.name || 'Unknown'}</TableCell>
-                        <TableCell>
-                          <Typography variant="body2">
-                            Number: {getVehicleNumber(booking)}
-                          </Typography>
-                          <Typography variant="body2" color="textSecondary">
-                            Type: {getVehicleType(booking)}
+                        <TableCell sx={{ py: 1.5 }}>
+                          <Typography variant="body2" fontWeight={600} noWrap>{booking.parking?.name || 'Unknown'}</Typography>
+                          {booking.createdAt && (
+                            <Typography variant="caption" color="text.secondary" display="block">
+                              Requested: {new Date(booking.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell sx={{ py: 1.5 }}>
+                          <Typography variant="body2" noWrap>{getVehicleNumber(booking)}</Typography>
+                          <Typography variant="caption" color="text.secondary">{getVehicleType(booking)}</Typography>
+                        </TableCell>
+                        <TableCell sx={{ py: 1.5 }}>
+                          <Typography variant="body2" noWrap>{new Date(booking.startTime).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}</Typography>
+                          <Typography variant="caption" color="text.secondary" noWrap>
+                            &rarr; {new Date(booking.endTime).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}
                           </Typography>
                         </TableCell>
-                        <TableCell>{new Date(booking.startTime).toLocaleString()}</TableCell>
-                        <TableCell>{new Date(booking.endTime).toLocaleString()}</TableCell>
-                        <TableCell>₹{booking.totalPrice?.toFixed(2) || '0.00'}</TableCell>
-                        <TableCell>
-                          <Chip 
-                            label={booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1) || 'Unknown'} 
+                        <TableCell sx={{ py: 1.5, whiteSpace: 'nowrap' }}>
+                          <Typography variant="body2" fontWeight={600}>₹{booking.totalPrice?.toFixed(2) || '0.00'}</Typography>
+                        </TableCell>
+                        <TableCell sx={{ py: 1.5 }}>
+                          <Chip
+                            size="small"
+                            label={booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1) || 'Unknown'}
                             color={
-                              booking.status === 'approved' ? 'success' : 
-                              booking.status === 'rejected' ? 'error' : 
-                              booking.status === 'pending' ? 'warning' : 
-                              'default'
+                              booking.status === 'approved' ? 'success' :
+                              booking.status === 'rejected' ? 'error' :
+                              booking.status === 'pending' ? 'warning' : 'default'
                             }
                           />
                         </TableCell>

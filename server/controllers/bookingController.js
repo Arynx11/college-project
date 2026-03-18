@@ -101,7 +101,8 @@ exports.getUserBookings = async (req, res) => {
         duration: durationHours,
         totalPrice: booking.totalPrice,
         status: booking.status,
-        vehicleDetails: booking.vehicleDetails
+        vehicleDetails: booking.vehicleDetails,
+        createdAt: booking.createdAt
       };
     });
 
