@@ -94,7 +94,7 @@ function TabPanel(props) {
 // LocationMarker component to show user's location on map
 function LocationMarker({ position, setPosition }) {
   const map = useMap();
-  
+
   useEffect(() => {
     if (position) {
       map.flyTo(position, map.getZoom());
@@ -114,30 +114,30 @@ function LocationMarker({ position, setPosition }) {
 const UserDashboard = () => {
   const { isAuthenticated, userName } = useAuth();
   const navigate = useNavigate();
-  
+
   // Helper function to get vehicle number from potentially inconsistent data structure
   const getVehicleNumber = (booking) => {
     if (!booking) return 'N/A';
-    
+
     // Direct access to the new flattened structure
     if (booking.vehicleDetails && booking.vehicleDetails.plateNumber) {
       return booking.vehicleDetails.plateNumber;
     }
-    
+
     // Fallback checks for older data structures
     if (booking.vehicleDetails) {
       // Check for number property
       if (booking.vehicleDetails.number) {
         return booking.vehicleDetails.number;
       }
-      
+
       // Check for nested type structure
       if (booking.vehicleDetails.type) {
         if (typeof booking.vehicleDetails.type === 'object' && booking.vehicleDetails.type.plateNumber) {
           return booking.vehicleDetails.type.plateNumber;
         }
       }
-      
+
       // Check for stringified JSON
       if (typeof booking.vehicleDetails === 'string') {
         try {
@@ -150,38 +150,38 @@ const UserDashboard = () => {
         }
       }
     }
-    
+
     // Direct property at booking level (for backward compatibility)
     if (booking.vehicleNumber) {
       return booking.vehicleNumber;
     }
-    
+
     return 'N/A';
   };
 
   // Helper function to get vehicle type from potentially inconsistent data structure
   const getVehicleType = (booking) => {
     if (!booking) return 'N/A';
-    
+
     // Direct access to the new flattened structure
     if (booking.vehicleDetails && booking.vehicleDetails.vehicleType) {
       return booking.vehicleDetails.vehicleType;
     }
-    
+
     // Fallback checks for older data structures
     if (booking.vehicleDetails) {
       // Check for type property as string
       if (booking.vehicleDetails.type && typeof booking.vehicleDetails.type === 'string') {
         return booking.vehicleDetails.type;
       }
-      
+
       // Check for nested type structure
       if (booking.vehicleDetails.type && typeof booking.vehicleDetails.type === 'object') {
         if (booking.vehicleDetails.type.vehicleType) {
           return booking.vehicleDetails.type.vehicleType;
         }
       }
-      
+
       // Check for stringified JSON
       if (typeof booking.vehicleDetails === 'string') {
         try {
@@ -194,15 +194,15 @@ const UserDashboard = () => {
         }
       }
     }
-    
+
     // Direct property at booking level (for backward compatibility)
     if (booking.vehicleType) {
       return booking.vehicleType;
     }
-    
+
     return 'N/A';
   };
-  
+
   // URL params — support /dashboard?tab=bookings to auto-switch tab
   const [searchParams] = useSearchParams();
   const location = useLocation();
@@ -226,11 +226,13 @@ const UserDashboard = () => {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [listPage, setListPage] = useState(1);
+  const itemsPerPage = 5;
 
   // Cancel booking dialog state
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelBookingId, setCancelBookingId] = useState(null);
-  
+
   // Form states
   const [bookingForm, setBookingForm] = useState({
     startTime: new Date(),
@@ -238,19 +240,19 @@ const UserDashboard = () => {
     vehicleNumber: '',
     vehicleType: 'car'
   });
-  
+
   const [paymentForm, setPaymentForm] = useState({
     cardNumber: '',
     expiryDate: '',
     cvv: '',
     name: ''
   });
-  
+
   const [filters, setFilters] = useState({
     vehicleType: '',
     features: []
   });
-  
+
   // Notification state
   const [notification, setNotification] = useState({
     open: false,
@@ -289,16 +291,16 @@ const UserDashboard = () => {
     const fetchUserData = async () => {
       try {
         setLoading(true);
-        
+
         // Fetch user profile
         const profileResponse = await userService.getUserProfile();
         if (profileResponse && profileResponse.data) {
           setUserProfile(profileResponse.data.user);
         }
-        
+
         // Fetch user bookings
         await fetchBookings();
-        
+
         setLoading(false);
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -306,7 +308,7 @@ const UserDashboard = () => {
         setLoading(false);
       }
     };
-    
+
     fetchUserData();
   }, []);
 
@@ -317,30 +319,30 @@ const UserDashboard = () => {
       const bookingsResponse = await userService.getUserBookings();
       if (bookingsResponse && bookingsResponse.data && bookingsResponse.data.bookings) {
         console.log('Received bookings data:', bookingsResponse.data.bookings.length, 'bookings');
-        
+
         // Deduplicate bookings based on _id to prevent multiple entries
         const allBookings = bookingsResponse.data.bookings;
-        
+
         // Create a Map using booking _id as the key to ensure uniqueness
         const uniqueBookingsMap = new Map();
         allBookings.forEach(booking => {
           uniqueBookingsMap.set(booking._id, booking);
         });
-        
+
         // Convert Map back to array
         const uniqueBookings = Array.from(uniqueBookingsMap.values());
         console.log('Deduplicated bookings length:', uniqueBookings.length, 'Original length:', allBookings.length);
-        
+
         // Filter active and past bookings
-        const active = uniqueBookings.filter(booking => 
-          booking.status === 'active' || 
-          booking.status === 'pending' || 
+        const active = uniqueBookings.filter(booking =>
+          booking.status === 'active' ||
+          booking.status === 'pending' ||
           booking.status === 'approved'
         );
-        const history = uniqueBookings.filter(booking => 
+        const history = uniqueBookings.filter(booking =>
           booking.status === 'completed' || booking.status === 'cancelled' || booking.status === 'rejected'
         );
-        
+
         setActiveBookings(active);
         setBookingHistory(history);
         return uniqueBookings;
@@ -388,6 +390,7 @@ const UserDashboard = () => {
       console.log('API Response for nearby parking lots:', response);
       if (response && response.data && response.data.parkings) {
         setNearbyParkingLots(response.data.parkings);
+        setListPage(1);
         console.log('Found parking lots:', response.data.parkings.length);
       } else {
         console.log('No parking lots found or unexpected response structure:', response);
@@ -406,7 +409,7 @@ const UserDashboard = () => {
     try {
       setIsSearching(true);
       const token = localStorage.getItem('token');
-      
+
       // Direct API call to get all parking lots without location filtering
       const response = await fetch(`${userService.API_URL}/parking`, {
         method: 'GET',
@@ -415,10 +418,10 @@ const UserDashboard = () => {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       const data = await response.json();
       console.log('All parking lots:', data);
-      
+
       if (data && data.data && data.data.parkings) {
         // Log each parking lot's coordinates for debugging
         data.data.parkings.forEach(lot => {
@@ -426,8 +429,9 @@ const UserDashboard = () => {
           console.log(`- Coordinates: ${JSON.stringify(lot.location?.coordinates)}`);
           console.log(`- Total Spots: ${lot.totalSpots}, Available: ${lot.availableSpots}`);
         });
-        
+
         setNearbyParkingLots(data.data.parkings);
+        setListPage(1);
         showNotification(`Found ${data.data.parkings.length} parking lots`, 'info');
       } else {
         showNotification('No parking lots found in the system', 'warning');
@@ -464,31 +468,31 @@ const UserDashboard = () => {
   const handleFeatureToggle = (feature) => {
     const features = [...filters.features];
     const index = features.indexOf(feature);
-    
+
     if (index === -1) {
       features.push(feature);
     } else {
       features.splice(index, 1);
     }
-    
+
     setFilters({ ...filters, features });
   };
 
   // Open booking dialog
   const handleOpenBookingDialog = (parkingLot) => {
     setSelectedParkingLot(parkingLot);
-    
+
     // Calculate end time (2 hours from now)
     const startTime = new Date();
     const endTime = new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
-    
+
     setBookingForm({
       startTime,
       endTime,
       vehicleNumber: userProfile?.vehicleNumber || '',
       vehicleType: 'car'
     });
-    
+
     setBookingDialogOpen(true);
   };
 
@@ -509,12 +513,12 @@ const UserDashboard = () => {
     if (!selectedParkingLot || !bookingForm.startTime || !bookingForm.endTime) {
       return { duration: 0, price: 0 };
     }
-    
+
     const start = new Date(bookingForm.startTime);
     const end = new Date(bookingForm.endTime);
     const durationHours = Math.max(0, Math.ceil((end - start) / (1000 * 60 * 60)));
     const price = durationHours * selectedParkingLot.pricePerHour;
-    
+
     return { duration: durationHours, price };
   };
 
@@ -525,19 +529,19 @@ const UserDashboard = () => {
         showNotification('No parking lot selected', 'error');
         return;
       }
-      
+
       if (!bookingForm.vehicleNumber) {
         showNotification('Please enter your vehicle number', 'error');
         return;
       }
-      
+
       const { duration, price } = calculateBookingDetails();
-      
+
       if (duration <= 0) {
         showNotification('Invalid booking duration', 'error');
         return;
       }
-      
+
       const bookingData = {
         parking: selectedParkingLot._id,
         startTime: bookingForm.startTime,
@@ -547,9 +551,9 @@ const UserDashboard = () => {
           type: bookingForm.vehicleType
         }
       };
-      
+
       const response = await userService.createBooking(bookingData);
-      
+
       if (response && response.data && response.data.booking) {
         // Close booking dialog and open payment dialog
         setBookingDialogOpen(false);
@@ -575,17 +579,17 @@ const UserDashboard = () => {
         showNotification('Please fill in all payment details', 'error');
         return;
       }
-      
+
       // In a real app, we would process the payment through a payment gateway
       // For now, simulate a successful payment
-      
+
       // Close payment dialog and show success notification
       setPaymentDialogOpen(false);
       showNotification('Payment successful! Your booking is confirmed', 'success');
-      
+
       // Refresh bookings using the deduplication function
       await fetchBookings();
-      
+
       // Switch to bookings tab
       setValue(1);
     } catch (error) {
@@ -605,7 +609,7 @@ const UserDashboard = () => {
     setCancelDialogOpen(false);
     try {
       const response = await userService.cancelBooking(cancelBookingId);
-      
+
       if (response && response.data) {
         showNotification('Booking cancelled successfully', 'success');
         await fetchBookings();
@@ -622,6 +626,15 @@ const UserDashboard = () => {
   const formatDate = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleString();
+  };
+
+  // Compact date: "18 Mar, 10:55 PM"
+  const formatShortDate = (dateString) => {
+    if (!dateString) return '—';
+    return new Date(dateString).toLocaleString('en-IN', {
+      day: '2-digit', month: 'short',
+      hour: '2-digit', minute: '2-digit', hour12: true,
+    });
   };
 
   // Calculate total stats
@@ -700,7 +713,7 @@ const UserDashboard = () => {
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
                   Use your current location or search by radius to discover available spots.
                 </Typography>
-                
+
                 <Grid container spacing={2} alignItems="center">
                   <Grid item xs={12} sm={6} md={3}>
                     <Button
@@ -742,9 +755,8 @@ const UserDashboard = () => {
                       fullWidth
                       sx={{ py: 1.3, fontWeight: 600 }}
                     >
-                      Filters {filters.vehicleType || filters.features.length > 0 ? `(${
-                        (filters.vehicleType ? 1 : 0) + filters.features.length
-                      })` : ''}
+                      Filters {filters.vehicleType || filters.features.length > 0 ? `(${(filters.vehicleType ? 1 : 0) + filters.features.length
+                        })` : ''}
                     </Button>
                   </Grid>
                   <Grid item xs={12} sm={6} md={3}>
@@ -771,7 +783,7 @@ const UserDashboard = () => {
                       {isSearching ? 'Searching...' : 'Search Parking'}
                     </Button>
                   </Grid>
-                  <Grid item xs={12} sm={6} md={3}>
+                  {/* <Grid item xs={12} sm={6} md={3}>
                     <Button
                       variant="outlined"
                       color="primary"
@@ -781,7 +793,7 @@ const UserDashboard = () => {
                     >
                       Show All Parking
                     </Button>
-                  </Grid>
+                  </Grid> */}
                 </Grid>
               </CardContent>
             </Card>
@@ -802,10 +814,10 @@ const UserDashboard = () => {
                       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     />
-                    
+
                     {/* User location marker */}
                     <LocationMarker position={[userLocation.lat, userLocation.lng]} />
-                    
+
                     {/* Parking lots markers - MongoDB stores as [longitude, latitude], but Leaflet needs [latitude, longitude] */}
                     {nearbyParkingLots.map((lot) => {
                       // Skip lots without valid coordinates
@@ -816,9 +828,9 @@ const UserDashboard = () => {
 
                       // Convert from MongoDB [longitude, latitude] to Leaflet [latitude, longitude]
                       const markerPosition = [lot.location.coordinates[1], lot.location.coordinates[0]];
-                      
+
                       return (
-                        <Marker 
+                        <Marker
                           key={lot._id}
                           position={markerPosition}
                         >
@@ -834,10 +846,10 @@ const UserDashboard = () => {
                             <Typography variant="body2">
                               Price: ₹{lot.pricePerHour}/hour
                             </Typography>
-                            <Button 
-                              size="small" 
-                              variant="contained" 
-                              color="primary" 
+                            <Button
+                              size="small"
+                              variant="contained"
+                              color="primary"
                               onClick={() => handleOpenBookingDialog(lot)}
                               disabled={lot.availableSpots <= 0}
                               sx={{ mt: 1 }}
@@ -851,7 +863,7 @@ const UserDashboard = () => {
                   </MapContainer>
                 </Paper>
               </Grid>
-              
+
               {/* Parking List */}
               <Grid item xs={12} md={4}>
                 <Typography variant="h6" gutterBottom>Available Parking Lots</Typography>
@@ -863,72 +875,95 @@ const UserDashboard = () => {
                       </Typography>
                     </Paper>
                   ) : (
-                    <>
-                      {nearbyParkingLots.map((lot) => (
-                        <Card key={lot._id} sx={{ mb: 2 }}>
-                          <CardContent>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                              <Typography variant="h6">{lot.name}</Typography>
-                              <Chip 
-                                label={lot.type.charAt(0).toUpperCase() + lot.type.slice(1)} 
-                                color={lot.type === 'government' ? 'primary' : lot.type === 'private' ? 'secondary' : 'default'}
-                                size="small"
-                              />
-                            </Box>
-                            
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                              <LocationOnIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5 }} />
-                              {lot.location.address || 'No address provided'}
-                            </Typography>
-                            
-                            <Grid container spacing={1} sx={{ mb: 1 }}>
-                              <Grid item xs={6}>
-                                <Typography variant="body2">
-                                  <LocalParkingIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5 }} />
-                                  {lot.availableSpots}/{lot.totalSpots} spots
-                                </Typography>
-                              </Grid>
-                              <Grid item xs={6}>
-                                <Typography variant="body2">
-                                  <LocalAtmIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5 }} />
-                                  ₹{lot.pricePerHour}/hour
-                                </Typography>
-                              </Grid>
-                            </Grid>
-                            
-                            {lot.features && lot.features.length > 0 && (
-                              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
-                                {lot.features.includes('ev') && (
-                                  <Chip icon={<EvStationIcon />} label="EV Charging" size="small" variant="outlined" />
-                                )}
-                                {lot.features.includes('covered') && (
-                                  <Chip label="Covered" size="small" variant="outlined" />
-                                )}
-                                {lot.features.includes('security') && (
-                                  <Chip icon={<SecurityIcon />} label="Security" size="small" variant="outlined" />
-                                )}
-                                {lot.features.includes('disabled') && (
-                                  <Chip icon={<AccessibleIcon />} label="Disabled Access" size="small" variant="outlined" />
-                                )}
-                                {lot.features.includes('24/7') && (
-                                  <Chip icon={<NightsStayIcon />} label="24/7" size="small" variant="outlined" />
-                                )}
+                    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                      <Box sx={{ flexGrow: 1, overflow: 'auto', mb: 2 }}>
+                        {nearbyParkingLots.slice((listPage - 1) * itemsPerPage, listPage * itemsPerPage).map((lot) => (
+                          <Card key={lot._id} sx={{ mb: 2 }}>
+                            <CardContent>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                <Typography variant="h6">{lot.name}</Typography>
+                                <Chip
+                                  label={lot.type.charAt(0).toUpperCase() + lot.type.slice(1)}
+                                  color={lot.type === 'government' ? 'primary' : lot.type === 'private' ? 'secondary' : 'default'}
+                                  size="small"
+                                />
                               </Box>
-                            )}
-                            
-                            <Button 
-                              variant="contained" 
-                              color="primary" 
-                              fullWidth
-                              onClick={() => handleOpenBookingDialog(lot)}
-                              disabled={lot.availableSpots <= 0}
-                            >
-                              {lot.availableSpots > 0 ? 'Book Now' : 'No Spots Available'}
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </>
+
+                              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                <LocationOnIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5 }} />
+                                {lot.location.address || 'No address provided'}
+                              </Typography>
+
+                              <Grid container spacing={1} sx={{ mb: 1 }}>
+                                <Grid item xs={6}>
+                                  <Typography variant="body2">
+                                    <LocalParkingIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5 }} />
+                                    {lot.availableSpots}/{lot.totalSpots} spots
+                                  </Typography>
+                                </Grid>
+                                <Grid item xs={6}>
+                                  <Typography variant="body2">
+                                    <LocalAtmIcon fontSize="small" sx={{ verticalAlign: 'middle', mr: 0.5 }} />
+                                    ₹{lot.pricePerHour}/hour
+                                  </Typography>
+                                </Grid>
+                              </Grid>
+
+                              {lot.features && lot.features.length > 0 && (
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
+                                  {lot.features.includes('ev') && (
+                                    <Chip icon={<EvStationIcon />} label="EV Charging" size="small" variant="outlined" />
+                                  )}
+                                  {lot.features.includes('covered') && (
+                                    <Chip label="Covered" size="small" variant="outlined" />
+                                  )}
+                                  {lot.features.includes('security') && (
+                                    <Chip icon={<SecurityIcon />} label="Security" size="small" variant="outlined" />
+                                  )}
+                                  {lot.features.includes('disabled') && (
+                                    <Chip icon={<AccessibleIcon />} label="Disabled Access" size="small" variant="outlined" />
+                                  )}
+                                  {lot.features.includes('24/7') && (
+                                    <Chip icon={<NightsStayIcon />} label="24/7" size="small" variant="outlined" />
+                                  )}
+                                </Box>
+                              )}
+
+                              <Button
+                                variant="contained"
+                                color="primary"
+                                fullWidth
+                                onClick={() => handleOpenBookingDialog(lot)}
+                                disabled={lot.availableSpots <= 0}
+                              >
+                                {lot.availableSpots > 0 ? 'Book Now' : 'No Spots Available'}
+                              </Button>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </Box>
+                      {nearbyParkingLots.length > itemsPerPage && (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 1, borderTop: '1px solid #eee' }}>
+                          <Button
+                            disabled={listPage === 1}
+                            onClick={() => setListPage(prev => prev - 1)}
+                            size="small"
+                          >
+                            Prev
+                          </Button>
+                          <Typography variant="body2" sx={{ mx: 2 }}>
+                            Page {listPage} of {Math.ceil(nearbyParkingLots.length / itemsPerPage)}
+                          </Typography>
+                          <Button
+                            disabled={listPage === Math.ceil(nearbyParkingLots.length / itemsPerPage)}
+                            onClick={() => setListPage(prev => prev + 1)}
+                            size="small"
+                          >
+                            Next
+                          </Button>
+                        </Box>
+                      )}
+                    </Box>
                   )}
                 </Box>
               </Grid>
@@ -940,9 +975,9 @@ const UserDashboard = () => {
               <Typography variant="body1" paragraph color="text.secondary">
                 Click the "Use My Location" button above to find available parking spaces near your current location.
               </Typography>
-              <Button 
-                variant="outlined" 
-                color="primary" 
+              <Button
+                variant="outlined"
+                color="primary"
                 onClick={fetchAllParkingLots}
                 disabled={isSearching}
                 sx={{ mt: 2 }}
@@ -958,96 +993,85 @@ const UserDashboard = () => {
           <Grid container spacing={3}>
             {/* Active Bookings */}
             <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom>Active Bookings</Typography>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>Active Bookings</Typography>
               {activeBookings.length === 0 ? (
-                <Paper sx={{ p: 3, textAlign: 'center' }}>
+                <Paper sx={{ p: 4, textAlign: 'center', border: '1px dashed', borderColor: 'divider' }} elevation={0}>
                   <Typography variant="body1" color="text.secondary">
                     You don't have any active bookings. Find and book a parking space to get started.
                   </Typography>
-                  <Button 
-                    variant="contained" 
-                    color="primary" 
-                    sx={{ mt: 2 }}
-                    onClick={() => setValue(0)}
-                  >
+                  <Button variant="contained" color="primary" sx={{ mt: 2 }} onClick={() => setValue(0)}>
                     Find Parking
                   </Button>
                 </Paper>
               ) : (
-                <TableContainer component={Paper}>
-                  <Table>
+                <TableContainer component={Paper} elevation={1} sx={{ overflowX: 'auto', borderRadius: 2 }}>
+                  <Table size="small">
                     <TableHead>
-                      <TableRow>
-                        <TableCell>Parking Lot</TableCell>
-                        <TableCell>Start Time</TableCell>
-                        <TableCell>End Time</TableCell>
-                        <TableCell>Duration</TableCell>
-                        <TableCell>Total Price</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell>Actions</TableCell>
+                      <TableRow sx={{ backgroundColor: 'grey.50' }}>
+                        <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Parking Lot</TableCell>
+                        <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Booking Slot</TableCell>
+                        <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Duration</TableCell>
+                        <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Price</TableCell>
+                        <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Status</TableCell>
+                        <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Actions</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {activeBookings.map((booking) => (
-                        <TableRow key={booking._id}>
-                          <TableCell>{booking.parking?.name || 'Unknown'}</TableCell>
-                          <TableCell>{formatDate(booking.startTime)}</TableCell>
-                          <TableCell>{formatDate(booking.endTime)}</TableCell>
-                          <TableCell>{booking.duration} hours</TableCell>
-                          <TableCell>₹{booking.totalPrice?.toFixed(2) || '0.00'}</TableCell>
-                          <TableCell>
-                            <Chip 
-                              icon={
-                                booking.status === 'approved' ? <CheckCircleIcon /> :
-                                booking.status === 'rejected' ? <CancelIcon /> :
-                                booking.status === 'pending' ? <AccessTimeIcon /> :
-                                undefined
-                              }
-                              label={booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1) || 'Unknown'} 
-                              color={
-                                booking.status === 'approved' ? 'success' : 
-                                booking.status === 'active' ? 'success' :
-                                booking.status === 'rejected' ? 'error' :
-                                booking.status === 'pending' ? 'warning' : 
-                                'default'
-                              }
-                            />
-                            {booking.comment && (
-                              <Tooltip title={booking.comment}>
-                                <IconButton size="small">
-                                  <InfoIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
+                        <TableRow key={booking._id} hover sx={{ '&:last-child td': { border: 0 } }}>
+                          <TableCell sx={{ py: 1.5 }}>
+                            <Typography variant="body2" fontWeight={600} noWrap>
+                              {booking.parking?.name || 'Unknown'}
+                            </Typography>
+                            {booking.createdAt && (
+                              <Typography variant="caption" color="text.secondary" display="block">
+                                Requested: {formatShortDate(booking.createdAt)}
+                              </Typography>
                             )}
                           </TableCell>
-                          <TableCell>
+                          <TableCell sx={{ py: 1.5 }}>
+                            <Typography variant="body2" noWrap>{formatShortDate(booking.startTime)}</Typography>
+                            <Typography variant="caption" color="text.secondary" noWrap>
+                              → {formatShortDate(booking.endTime)}
+                            </Typography>
+                          </TableCell>
+                          <TableCell sx={{ py: 1.5, whiteSpace: 'nowrap' }}>
+                            <Typography variant="body2">{booking.duration}h</Typography>
+                          </TableCell>
+                          <TableCell sx={{ py: 1.5, whiteSpace: 'nowrap' }}>
+                            <Typography variant="body2" fontWeight={600}>₹{booking.totalPrice?.toFixed(2) || '0.00'}</Typography>
+                          </TableCell>
+                          <TableCell sx={{ py: 1.5 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <Chip
+                                size="small"
+                                icon={
+                                  booking.status === 'approved' ? <CheckCircleIcon /> :
+                                    booking.status === 'rejected' ? <CancelIcon /> :
+                                      booking.status === 'pending' ? <AccessTimeIcon /> :
+                                        undefined
+                                }
+                                label={booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1) || 'Unknown'}
+                                color={
+                                  booking.status === 'approved' || booking.status === 'active' ? 'success' :
+                                    booking.status === 'rejected' ? 'error' :
+                                      booking.status === 'pending' ? 'warning' : 'default'
+                                }
+                              />
+                              {booking.comment && (
+                                <Tooltip title={booking.comment}>
+                                  <IconButton size="small"><InfoIcon fontSize="small" /></IconButton>
+                                </Tooltip>
+                              )}
+                            </Box>
+                          </TableCell>
+                          <TableCell sx={{ py: 1.5 }}>
                             {booking.status === 'approved' || booking.status === 'active' ? (
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                color="error"
-                                onClick={() => handleCancelBooking(booking._id)}
-                              >
-                                Cancel
-                              </Button>
+                              <Button size="small" variant="outlined" color="error" onClick={() => handleCancelBooking(booking._id)}>Cancel</Button>
                             ) : booking.status === 'pending' ? (
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                color="error"
-                                onClick={() => handleCancelBooking(booking._id)}
-                              >
-                                Cancel Request
-                              </Button>
+                              <Button size="small" variant="outlined" color="error" onClick={() => handleCancelBooking(booking._id)}>Cancel Request</Button>
                             ) : (
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                color="primary"
-                                onClick={() => setValue(0)}
-                              >
-                                Book New
-                              </Button>
+                              <Button size="small" variant="outlined" color="primary" onClick={() => setValue(0)}>Book New</Button>
                             )}
                           </TableCell>
                         </TableRow>
@@ -1057,42 +1081,60 @@ const UserDashboard = () => {
                 </TableContainer>
               )}
             </Grid>
-            
+
             {/* Booking History */}
             <Grid item xs={12} sx={{ mt: 3 }}>
-              <Typography variant="h6" gutterBottom>Booking History</Typography>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>Booking History</Typography>
               {bookingHistory.length === 0 ? (
-                <Paper sx={{ p: 3, textAlign: 'center' }}>
+                <Paper sx={{ p: 4, textAlign: 'center', border: '1px dashed', borderColor: 'divider' }} elevation={0}>
                   <Typography variant="body1" color="text.secondary">
                     You don't have any booking history yet.
                   </Typography>
                 </Paper>
               ) : (
-                <TableContainer component={Paper}>
-                  <Table>
+                <TableContainer component={Paper} elevation={1} sx={{ overflowX: 'auto', borderRadius: 2 }}>
+                  <Table size="small">
                     <TableHead>
-                      <TableRow>
-                        <TableCell>Parking Lot</TableCell>
-                        <TableCell>Date</TableCell>
-                        <TableCell>Duration</TableCell>
-                        <TableCell>Total Price</TableCell>
-                        <TableCell>Status</TableCell>
+                      <TableRow sx={{ backgroundColor: 'grey.50' }}>
+                        <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Parking Lot</TableCell>
+                        <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Booking Slot</TableCell>
+                        <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Duration</TableCell>
+                        <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Price</TableCell>
+                        <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Status</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {bookingHistory.map((booking) => (
-                        <TableRow key={booking._id}>
-                          <TableCell>{booking.parking?.name || 'Unknown'}</TableCell>
-                          <TableCell>{formatDate(booking.startTime)}</TableCell>
-                          <TableCell>{booking.duration} hours</TableCell>
-                          <TableCell>₹{booking.totalPrice?.toFixed(2) || '0.00'}</TableCell>
-                          <TableCell>
-                            <Chip 
-                              label={booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1) || 'Unknown'} 
+                        <TableRow key={booking._id} hover sx={{ '&:last-child td': { border: 0 } }}>
+                          <TableCell sx={{ py: 1.5 }}>
+                            <Typography variant="body2" fontWeight={600} noWrap>
+                              {booking.parking?.name || 'Unknown'}
+                            </Typography>
+                            {booking.createdAt && (
+                              <Typography variant="caption" color="text.secondary" display="block">
+                                Requested: {formatShortDate(booking.createdAt)}
+                              </Typography>
+                            )}
+                          </TableCell>
+                          <TableCell sx={{ py: 1.5 }}>
+                            <Typography variant="body2" noWrap>{formatShortDate(booking.startTime)}</Typography>
+                            <Typography variant="caption" color="text.secondary" noWrap>
+                              → {formatShortDate(booking.endTime)}
+                            </Typography>
+                          </TableCell>
+                          <TableCell sx={{ py: 1.5, whiteSpace: 'nowrap' }}>
+                            <Typography variant="body2">{booking.duration}h</Typography>
+                          </TableCell>
+                          <TableCell sx={{ py: 1.5, whiteSpace: 'nowrap' }}>
+                            <Typography variant="body2" fontWeight={600}>₹{booking.totalPrice?.toFixed(2) || '0.00'}</Typography>
+                          </TableCell>
+                          <TableCell sx={{ py: 1.5 }}>
+                            <Chip
+                              size="small"
+                              label={booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1) || 'Unknown'}
                               color={
-                                booking.status === 'completed' ? 'success' : 
-                                booking.status === 'cancelled' ? 'error' : 
-                                'default'
+                                booking.status === 'completed' ? 'success' :
+                                  booking.status === 'cancelled' ? 'error' : 'default'
                               }
                             />
                           </TableCell>
@@ -1150,7 +1192,7 @@ const UserDashboard = () => {
                 </CardContent>
               </Card>
             </Grid>
-            
+
             <Grid item xs={12} md={6}>
               <Card>
                 <CardContent>
@@ -1223,7 +1265,7 @@ const UserDashboard = () => {
                   <MenuItem value="ev">Electric Vehicle</MenuItem>
                 </Select>
               </FormControl>
-              
+
               <Typography variant="subtitle1">Features:</Typography>
               <FormGroup>
                 <FormControlLabel
@@ -1292,7 +1334,7 @@ const UserDashboard = () => {
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   {selectedParkingLot.location.address || 'No address provided'}
                 </Typography>
-                
+
                 <Grid container spacing={2} sx={{ mb: 2 }}>
                   <Grid item xs={6}>
                     <Typography variant="body2">
@@ -1307,9 +1349,9 @@ const UserDashboard = () => {
                     </Typography>
                   </Grid>
                 </Grid>
-                
+
                 <Divider sx={{ my: 2 }} />
-                
+
                 <LocalizationProvider dateAdapter={AdapterDateFns}>
                   <Grid container spacing={2}>
                     <Grid item xs={12} sm={6}>
@@ -1332,7 +1374,7 @@ const UserDashboard = () => {
                     </Grid>
                   </Grid>
                 </LocalizationProvider>
-                
+
                 <TextField
                   label="Vehicle Number"
                   name="vehicleNumber"
@@ -1342,7 +1384,7 @@ const UserDashboard = () => {
                   required
                   margin="normal"
                 />
-                
+
                 <FormControl fullWidth margin="normal">
                   <InputLabel>Vehicle Type</InputLabel>
                   <Select
@@ -1356,9 +1398,9 @@ const UserDashboard = () => {
                     <MenuItem value="ev">Electric Vehicle</MenuItem>
                   </Select>
                 </FormControl>
-                
+
                 <Divider sx={{ my: 2 }} />
-                
+
                 <Box sx={{ bgcolor: 'background.paper', p: 2, borderRadius: 1 }}>
                   <Grid container spacing={2}>
                     <Grid item xs={6}>
@@ -1388,7 +1430,7 @@ const UserDashboard = () => {
           <DialogContent>
             <Box sx={{ pt: 2 }}>
               <Typography variant="h6" gutterBottom>Enter Payment Information</Typography>
-              
+
               <TextField
                 label="Card Number"
                 name="cardNumber"
@@ -1405,7 +1447,7 @@ const UserDashboard = () => {
                   ),
                 }}
               />
-              
+
               <Grid container spacing={2}>
                 <Grid item xs={6}>
                   <TextField
@@ -1431,7 +1473,7 @@ const UserDashboard = () => {
                   />
                 </Grid>
               </Grid>
-              
+
               <TextField
                 label="Cardholder Name"
                 name="name"
@@ -1440,7 +1482,7 @@ const UserDashboard = () => {
                 fullWidth
                 margin="normal"
               />
-              
+
               <Box sx={{ bgcolor: 'background.paper', p: 2, borderRadius: 1, mt: 2 }}>
                 <Typography variant="subtitle2" gutterBottom>Payment Summary:</Typography>
                 <Typography variant="body1">
