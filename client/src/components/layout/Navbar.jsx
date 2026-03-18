@@ -28,10 +28,10 @@ export const AuthContext = createContext();
 
 // Auth Provider component
 export const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userRole, setUserRole] = useState(null);
-  const [userName, setUserName] = useState("");
-  const [userId, setUserId] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem("token"));
+  const [userRole, setUserRole] = useState(() => localStorage.getItem("userRole") || null);
+  const [userName, setUserName] = useState(() => localStorage.getItem("userName") || "");
+  const [userId, setUserId] = useState(() => localStorage.getItem("userId") || null);
 
   useEffect(() => {
     // Check if user is authenticated
