@@ -23,7 +23,6 @@ import GuestHome from './views/guest/GuestHome';
 import UserDashboard from './views/user/UserDashboard';
 import AccountSettings from './views/user/AccountSettings';
 import OperatorDashboard from './views/operator/OperatorDashboard';
-import ResidentialDashboard from './views/residential/ResidentialDashboard';
 import ParkingMap from './views/guest/ParkingMap';
 
 // Auth components
@@ -63,7 +62,7 @@ function App() {
                       </ProtectedRoute>
                     } />
                     <Route path="/account" element={
-                      <ProtectedRoute allowedRoles={['user', 'operator', 'residential']}>
+                      <ProtectedRoute allowedRoles={['user', 'operator']}>
                         <AccountSettings />
                       </ProtectedRoute>
                     } />
@@ -92,28 +91,6 @@ function App() {
                     <Route path="/operator/bookings" element={
                       <ProtectedRoute allowedRoles={['operator']}>
                         <OperatorDashboard />
-                      </ProtectedRoute>
-                    } />
-
-                    {/* Residential routes - only accessible by residential owners */}
-                    <Route path="/residential/*" element={
-                      <ProtectedRoute allowedRoles={['residential']}>
-                        <ResidentialDashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/residential/dashboard" element={
-                      <ProtectedRoute allowedRoles={['residential']}>
-                        <ResidentialDashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/residential/spaces" element={
-                      <ProtectedRoute allowedRoles={['residential']}>
-                        <ResidentialDashboard />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/residential/bookings" element={
-                      <ProtectedRoute allowedRoles={['residential']}>
-                        <ResidentialDashboard />
                       </ProtectedRoute>
                     } />
 

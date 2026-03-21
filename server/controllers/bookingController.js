@@ -149,7 +149,7 @@ exports.getOperatorBookings = async (req, res) => {
   }
 };
 
-// Update booking status (for operators and residential owners)
+// Update booking status (for operators)
 exports.updateBookingStatus = async (req, res) => {
   try {
     const { status, comment } = req.body;

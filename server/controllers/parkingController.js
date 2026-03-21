@@ -109,9 +109,6 @@ exports.createParking = async (req, res) => {
     if (req.originalUrl && (req.originalUrl.includes('/operators') || req.originalUrl.includes('/operator'))) {
       console.log('URL indicates operator role');
       effectiveRole = 'operator';
-    } else if (req.originalUrl && req.originalUrl.includes('/residential')) {
-      console.log('URL indicates residential role');
-      effectiveRole = 'residential';
     }
     
     console.log('Effective user role:', effectiveRole);
@@ -121,33 +118,19 @@ exports.createParking = async (req, res) => {
       effectiveRole === 'operator' || 
       (typeof effectiveRole === 'string' && effectiveRole.toLowerCase().includes('operator'));
     
-    const isResidential = 
-      effectiveRole === 'residential' || 
-      (typeof effectiveRole === 'string' && effectiveRole.toLowerCase().includes('resident'));
-    
     // Role-based parking type validation with improved detection
     if (isOperator) {
-      // Operators can only create government or private parking spaces
-      if (req.body.type === 'residential') {
-        console.log('Operator attempting to create residential parking, changing to private');
-        req.body.type = 'private';
-      }
-      
       // Ensure type is set - default to 'private' if not provided
       if (!req.body.type || !['government', 'private', 'public'].includes(req.body.type)) {
         req.body.type = 'private';
         console.log('Setting default type to "private" for operator');
       }
-    } else if (isResidential) {
-      // Force type to be residential regardless of what was sent
-      req.body.type = 'residential';
-      console.log('Setting type to "residential" for residential user');
     } else {
       // Regular users cannot create parking spaces
       console.log('Unauthorized role detected:', effectiveRole);
       return res.status(403).json({
         status: 'fail',
-        message: 'Only operators and residential users can create parking spaces'
+        message: 'Only operators can create parking spaces'
       });
     }
     

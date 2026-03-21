@@ -69,9 +69,6 @@ const Login = () => {
         case 'operator':
           navigate('/operator/dashboard');
           break;
-        case 'residential':
-          navigate('/residential/dashboard');
-          break;
         default:
           navigate('/dashboard');
       }
@@ -85,8 +82,6 @@ const Login = () => {
     switch (role) {
       case 'operator':
         return 'Parking Operator';
-      case 'residential':
-        return 'Residential Owner';
       default:
         return 'Regular User';
     }
@@ -135,7 +130,6 @@ const Login = () => {
                 disabled={isLoading}
               >
                 <MenuItem value="user">{getRoleName('user')}</MenuItem>
-                <MenuItem value="residential">{getRoleName('residential')}</MenuItem>
                 <MenuItem value="operator">{getRoleName('operator')}</MenuItem>
               </Select>
             </FormControl>

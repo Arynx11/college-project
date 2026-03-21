@@ -866,6 +866,7 @@ const OperatorDashboard = () => {
                     <TableRow sx={{ backgroundColor: 'grey.50' }}>
                       <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>User</TableCell>
                       <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Parking Space</TableCell>
+                      <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Timestamp</TableCell>
                       <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Vehicle</TableCell>
                       <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Booking Slot</TableCell>
                       <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Price</TableCell>
@@ -880,11 +881,11 @@ const OperatorDashboard = () => {
                         </TableCell>
                         <TableCell sx={{ py: 1.5 }}>
                           <Typography variant="body2" fontWeight={600} noWrap>{booking.parking?.name || 'Unknown'}</Typography>
-                          {booking.createdAt && (
-                            <Typography variant="caption" color="text.secondary" display="block">
-                              Requested: {new Date(booking.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}
-                            </Typography>
-                          )}
+                        </TableCell>
+                        <TableCell sx={{ py: 1.5 }}>
+                          <Typography variant="body2">
+                            {booking.createdAt ? new Date(booking.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true }) : '—'}
+                          </Typography>
                         </TableCell>
                         <TableCell sx={{ py: 1.5 }}>
                           <Typography variant="body2" noWrap>{getVehicleNumber(booking)}</Typography>
@@ -919,6 +920,7 @@ const OperatorDashboard = () => {
                     <TableRow sx={{ backgroundColor: 'grey.50' }}>
                       <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>User</TableCell>
                       <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Parking Space</TableCell>
+                      <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Timestamp</TableCell>
                       <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Vehicle</TableCell>
                       <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Booking Slot</TableCell>
                       <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Price</TableCell>
@@ -933,11 +935,11 @@ const OperatorDashboard = () => {
                         </TableCell>
                         <TableCell sx={{ py: 1.5 }}>
                           <Typography variant="body2" fontWeight={600} noWrap>{booking.parking?.name || 'Unknown'}</Typography>
-                          {booking.createdAt && (
-                            <Typography variant="caption" color="text.secondary" display="block">
-                              Requested: {new Date(booking.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true })}
-                            </Typography>
-                          )}
+                        </TableCell>
+                        <TableCell sx={{ py: 1.5 }}>
+                          <Typography variant="body2">
+                            {booking.createdAt ? new Date(booking.createdAt).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true }) : '—'}
+                          </Typography>
                         </TableCell>
                         <TableCell sx={{ py: 1.5 }}>
                           <Typography variant="body2" noWrap>{getVehicleNumber(booking)}</Typography>

@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'operator', 'residential'],
+    enum: ['user', 'operator'],
     required: [true, 'Please provide a role']
   },
   vehicleNumber: {
@@ -40,6 +40,12 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.ObjectId,
     ref: 'Booking'
   }],
+  paymentDetails: {
+    cardNumber: String,
+    expiryDate: String,
+    cvv: String,
+    cardholderName: String
+  },
   passwordResetToken: String,
   passwordResetExpires: Date,
   createdAt: {

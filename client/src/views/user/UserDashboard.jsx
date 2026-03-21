@@ -225,6 +225,7 @@ const UserDashboard = () => {
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [vehicleDialogOpen, setVehicleDialogOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [listPage, setListPage] = useState(1);
   const itemsPerPage = 5;
@@ -247,6 +248,133 @@ const UserDashboard = () => {
     cvv: '',
     name: ''
   });
+
+  const [editPaymentDialogOpen, setEditPaymentDialogOpen] = useState(false);
+  const [editVehicleForm, setEditVehicleForm] = useState({ vehicleNumber: 'MH 01 AB 1234', vehicleType: 'car' });
+  const [editPaymentForm, setEditPaymentForm] = useState({ 
+    cardNumber: '123456789012', 
+    expiryDate: '12/25',
+    cvv: '123',
+    name: 'John Doe'
+  });
+
+  const handleOpenVehicleDialog = () => {
+    setEditVehicleForm({
+      vehicleNumber: userProfile?.vehicleNumber || '',
+      vehicleType: userProfile?.vehicleType || 'car'
+    });
+    setVehicleDialogOpen(true);
+  };
+
+  const handleSaveVehicleInfo = async () => {
+    const vehicleRegex = /^[A-Z]{2}\s\d{2}\s[A-Z]{1,2}\s\d{4}$/;
+    if (!vehicleRegex.test(editVehicleForm.vehicleNumber.toUpperCase())) {
+      showNotification('Please enter vehicle number in format: MH 01 AB 1234', 'error');
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      const response = await userService.updateProfile({
+        vehicleNumber: editVehicleForm.vehicleNumber.toUpperCase(),
+        vehicleType: editVehicleForm.vehicleType
+      });
+      
+      if (response && response.status === 'success') {
+        setUserProfile(response.data.user);
+        showNotification('Vehicle information updated successfully', 'success');
+        setVehicleDialogOpen(false);
+      }
+    } catch (error) {
+      showNotification(error.message || 'Failed to update vehicle information', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenPaymentDetailsDialog = () => {
+    // Keep it simple for mockup
+    setEditPaymentDialogOpen(true);
+  };
+
+  const handleSavePaymentInfo = async () => {
+    const cardDigits = editPaymentForm.cardNumber.replace(/\D/g, '');
+    const cvvDigits = editPaymentForm.cvv.replace(/\D/g, '');
+    
+    if (cardDigits.length !== 12) {
+      showNotification('Card number must be exactly 12 digits', 'error');
+      return;
+    }
+    if (cvvDigits.length !== 3) {
+      showNotification('CVV must be 3 digits', 'error');
+      return;
+    }
+    const expiryRegex = /^(0[1-9]|1[0-2])\/\d{2}$/;
+    if (!expiryRegex.test(editPaymentForm.expiryDate)) {
+      showNotification('Expiry date must be in MM/YY format (01-12/YY)', 'error');
+      return;
+    }
+    if (!editPaymentForm.name.trim()) {
+      showNotification('Cardholder name is required', 'error');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await userService.updateProfile({
+        paymentDetails: {
+          cardNumber: editPaymentForm.cardNumber,
+          expiryDate: editPaymentForm.expiryDate,
+          cvv: editPaymentForm.cvv,
+          cardholderName: editPaymentForm.name
+        }
+      });
+      
+      if (response && response.status === 'success') {
+        setUserProfile(response.data.user);
+        showNotification('Payment details updated successfully', 'success');
+        setEditPaymentDialogOpen(false);
+      }
+    } catch (error) {
+      showNotification(error.message || 'Failed to update payment details', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditVehicleFormChange = (e) => {
+    const { name, value } = e.target;
+    if (name === 'vehicleNumber') {
+      setEditVehicleForm(prev => ({ ...prev, [name]: value.toUpperCase() }));
+    } else {
+      setEditVehicleForm(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleEditPaymentFormChange = (e) => {
+    const { name, value } = e.target;
+    if (name === 'cardNumber') {
+      const digits = value.replace(/\D/g, '');
+      if (digits.length <= 12) {
+        setEditPaymentForm(prev => ({ ...prev, [name]: digits }));
+      }
+    } else if (name === 'cvv') {
+      const digits = value.replace(/\D/g, '');
+      if (digits.length <= 3) {
+        setEditPaymentForm(prev => ({ ...prev, [name]: digits }));
+      }
+    } else if (name === 'expiryDate') {
+      // Auto-add slash after 2 digits
+      let val = value.replace(/\D/g, '');
+      if (val.length > 4) val = val.substring(0, 4);
+      if (val.length > 2) {
+        val = val.substring(0, 2) + '/' + val.substring(2);
+      }
+      setEditPaymentForm(prev => ({ ...prev, [name]: val }));
+    } else {
+      setEditPaymentForm(prev => ({ ...prev, [name]: value }));
+    }
+  };
 
   const [filters, setFilters] = useState({
     vehicleType: '',
@@ -294,8 +422,19 @@ const UserDashboard = () => {
 
         // Fetch user profile
         const profileResponse = await userService.getUserProfile();
-        if (profileResponse && profileResponse.data) {
-          setUserProfile(profileResponse.data.user);
+        if (profileResponse && profileResponse.data && profileResponse.data.user) {
+          const user = profileResponse.data.user;
+          setUserProfile(user);
+          
+          // Populate edit forms if data exists in DB
+          if (user.paymentDetails) {
+            setEditPaymentForm({
+              cardNumber: user.paymentDetails.cardNumber || '123456789012',
+              expiryDate: user.paymentDetails.expiryDate || '12/25',
+              cvv: user.paymentDetails.cvv || '123',
+              name: user.paymentDetails.cardholderName || user.name
+            });
+          }
         }
 
         // Fetch user bookings
@@ -505,7 +644,11 @@ const UserDashboard = () => {
   // Handle booking form change
   const handleBookingFormChange = (e) => {
     const { name, value } = e.target;
-    setBookingForm({ ...bookingForm, [name]: value });
+    if (name === 'vehicleNumber') {
+      setBookingForm({ ...bookingForm, [name]: value.toUpperCase() });
+    } else {
+      setBookingForm({ ...bookingForm, [name]: value });
+    }
   };
 
   // Calculate booking duration and price
@@ -535,6 +678,12 @@ const UserDashboard = () => {
         return;
       }
 
+      const vehicleRegex = /^[A-Z]{2}\s\d{2}\s[A-Z]{1,2}\s\d{4}$/;
+      if (!vehicleRegex.test(bookingForm.vehicleNumber)) {
+        showNotification('Invalid vehicle number format (Example: MH 01 AB 1234)', 'error');
+        return;
+      }
+
       const { duration, price } = calculateBookingDetails();
 
       if (duration <= 0) {
@@ -555,7 +704,16 @@ const UserDashboard = () => {
       const response = await userService.createBooking(bookingData);
 
       if (response && response.data && response.data.booking) {
-        // Close booking dialog and open payment dialog
+        // Pre-fill payment form with saved data if available
+        if (userProfile?.paymentDetails) {
+          setPaymentForm({
+            cardNumber: userProfile.paymentDetails.cardNumber || '',
+            expiryDate: userProfile.paymentDetails.expiryDate || '',
+            cvv: userProfile.paymentDetails.cvv || '',
+            name: userProfile.paymentDetails.cardholderName || userProfile.name || ''
+          });
+        }
+        
         setBookingDialogOpen(false);
         setPaymentDialogOpen(true);
       }
@@ -568,7 +726,26 @@ const UserDashboard = () => {
   // Handle payment form change
   const handlePaymentFormChange = (e) => {
     const { name, value } = e.target;
-    setPaymentForm({ ...paymentForm, [name]: value });
+    if (name === 'cardNumber') {
+      const digits = value.replace(/\D/g, '');
+      if (digits.length <= 12) {
+        setPaymentForm({ ...paymentForm, [name]: digits });
+      }
+    } else if (name === 'cvv') {
+      const digits = value.replace(/\D/g, '');
+      if (digits.length <= 3) {
+        setPaymentForm({ ...paymentForm, [name]: digits });
+      }
+    } else if (name === 'expiryDate') {
+      let val = value.replace(/\D/g, '');
+      if (val.length > 4) val = val.substring(0, 4);
+      if (val.length > 2) {
+        val = val.substring(0, 2) + '/' + val.substring(2);
+      }
+      setPaymentForm({ ...paymentForm, [name]: val });
+    } else {
+      setPaymentForm({ ...paymentForm, [name]: value });
+    }
   };
 
   // Process payment
@@ -577,6 +754,19 @@ const UserDashboard = () => {
       // Validate payment form
       if (!paymentForm.cardNumber || !paymentForm.expiryDate || !paymentForm.cvv || !paymentForm.name) {
         showNotification('Please fill in all payment details', 'error');
+        return;
+      }
+      if (paymentForm.cardNumber.length !== 12) {
+        showNotification('Card number must be exactly 12 digits', 'error');
+        return;
+      }
+      const expiryRegex = /^(0[1-9]|1[0-2])\/\d{2}$/;
+      if (!expiryRegex.test(paymentForm.expiryDate)) {
+        showNotification('Expiry date must be MM/YY (01-12/YY)', 'error');
+        return;
+      }
+      if (paymentForm.cvv.length !== 3) {
+        showNotification('CVV must be 3 digits', 'error');
         return;
       }
 
@@ -783,17 +973,7 @@ const UserDashboard = () => {
                       {isSearching ? 'Searching...' : 'Search Parking'}
                     </Button>
                   </Grid>
-                  {/* <Grid item xs={12} sm={6} md={3}>
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      onClick={fetchAllParkingLots}
-                      fullWidth
-                      sx={{ py: 1.3, fontWeight: 600 }}
-                    >
-                      Show All Parking
-                    </Button>
-                  </Grid> */}
+
                 </Grid>
               </CardContent>
             </Card>
@@ -975,16 +1155,7 @@ const UserDashboard = () => {
               <Typography variant="body1" paragraph color="text.secondary">
                 Click the "Use My Location" button above to find available parking spaces near your current location.
               </Typography>
-              <Button
-                variant="outlined"
-                color="primary"
-                onClick={fetchAllParkingLots}
-                disabled={isSearching}
-                sx={{ mt: 2 }}
-              >
-                Show All Parking
-              </Button>
-            </Paper>
+              </Paper>
           )}
         </TabPanel>
 
@@ -1009,6 +1180,7 @@ const UserDashboard = () => {
                     <TableHead>
                       <TableRow sx={{ backgroundColor: 'grey.50' }}>
                         <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Parking Lot</TableCell>
+                        <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Timestamp</TableCell>
                         <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Booking Slot</TableCell>
                         <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Duration</TableCell>
                         <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Price</TableCell>
@@ -1023,11 +1195,9 @@ const UserDashboard = () => {
                             <Typography variant="body2" fontWeight={600} noWrap>
                               {booking.parking?.name || 'Unknown'}
                             </Typography>
-                            {booking.createdAt && (
-                              <Typography variant="caption" color="text.secondary" display="block">
-                                Requested: {formatShortDate(booking.createdAt)}
-                              </Typography>
-                            )}
+                          </TableCell>
+                          <TableCell sx={{ py: 1.5 }}>
+                            <Typography variant="body2">{formatShortDate(booking.createdAt)}</Typography>
                           </TableCell>
                           <TableCell sx={{ py: 1.5 }}>
                             <Typography variant="body2" noWrap>{formatShortDate(booking.startTime)}</Typography>
@@ -1097,6 +1267,7 @@ const UserDashboard = () => {
                     <TableHead>
                       <TableRow sx={{ backgroundColor: 'grey.50' }}>
                         <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Parking Lot</TableCell>
+                        <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Timestamp</TableCell>
                         <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Booking Slot</TableCell>
                         <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Duration</TableCell>
                         <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', py: 1.5 }}>Price</TableCell>
@@ -1110,11 +1281,9 @@ const UserDashboard = () => {
                             <Typography variant="body2" fontWeight={600} noWrap>
                               {booking.parking?.name || 'Unknown'}
                             </Typography>
-                            {booking.createdAt && (
-                              <Typography variant="caption" color="text.secondary" display="block">
-                                Requested: {formatShortDate(booking.createdAt)}
-                              </Typography>
-                            )}
+                          </TableCell>
+                          <TableCell sx={{ py: 1.5 }}>
+                            <Typography variant="body2">{formatShortDate(booking.createdAt)}</Typography>
                           </TableCell>
                           <TableCell sx={{ py: 1.5 }}>
                             <Typography variant="body2" noWrap>{formatShortDate(booking.startTime)}</Typography>
@@ -1154,40 +1323,50 @@ const UserDashboard = () => {
             <Grid item xs={12} md={6}>
               <Card>
                 <CardContent>
-                  <Typography variant="h6" gutterBottom>Profile Information</Typography>
+                  <Typography variant="h6" gutterBottom>Payment Details</Typography>
                   <Box sx={{ mt: 2 }}>
                     <Grid container spacing={2}>
                       <Grid item xs={12}>
                         <TextField
-                          label="Name"
-                          value={userProfile?.name || ''}
+                          label="Cardholder Name"
+                          value={userProfile?.paymentDetails?.cardholderName || userProfile?.name || 'Not provided'}
                           fullWidth
-                          InputProps={{
-                            readOnly: true,
-                          }}
+                          InputProps={{ readOnly: true }}
                         />
                       </Grid>
                       <Grid item xs={12}>
                         <TextField
-                          label="Email"
-                          value={userProfile?.email || ''}
+                          label="Card Number"
+                          value={userProfile?.paymentDetails?.cardNumber ? `**** **** **** ${userProfile.paymentDetails.cardNumber.slice(-4)}` : '**** **** **** 1234'}
                           fullWidth
-                          InputProps={{
-                            readOnly: true,
-                          }}
+                          InputProps={{ readOnly: true }}
                         />
                       </Grid>
-                      <Grid item xs={12}>
+                      <Grid item xs={6}>
                         <TextField
-                          label="Role"
-                          value={userProfile?.role?.charAt(0).toUpperCase() + userProfile?.role?.slice(1) || ''}
+                          label="Expiry Date"
+                          value={userProfile?.paymentDetails?.expiryDate || '12/25'}
                           fullWidth
-                          InputProps={{
-                            readOnly: true,
-                          }}
+                          InputProps={{ readOnly: true }}
+                        />
+                      </Grid>
+                      <Grid item xs={6}>
+                        <TextField
+                          label="CVV"
+                          value={userProfile?.paymentDetails?.cvv ? '***' : '***'}
+                          fullWidth
+                          InputProps={{ readOnly: true }}
                         />
                       </Grid>
                     </Grid>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      sx={{ mt: 2 }}
+                      onClick={handleOpenPaymentDetailsDialog}
+                    >
+                      Edit Payment
+                    </Button>
                   </Box>
                 </CardContent>
               </Card>
@@ -1224,9 +1403,9 @@ const UserDashboard = () => {
                       variant="contained"
                       color="primary"
                       sx={{ mt: 2 }}
-                      onClick={() => navigate('/account')}
+                      onClick={handleOpenVehicleDialog}
                     >
-                      Edit Profile
+                      Edit Vehicle
                     </Button>
                   </Box>
                 </CardContent>
@@ -1383,6 +1562,8 @@ const UserDashboard = () => {
                   fullWidth
                   required
                   margin="normal"
+                  placeholder="MH 01 AB 1234"
+                  helperText="Format: MH 01 AB 1234"
                 />
 
                 <FormControl fullWidth margin="normal">
@@ -1437,7 +1618,7 @@ const UserDashboard = () => {
                 value={paymentForm.cardNumber}
                 onChange={handlePaymentFormChange}
                 fullWidth
-                placeholder="1234 5678 9012 3456"
+                placeholder="1234 5678 9012"
                 margin="normal"
                 InputProps={{
                   startAdornment: (
@@ -1496,6 +1677,114 @@ const UserDashboard = () => {
             <Button onClick={handleProcessPayment} variant="contained" color="primary">
               Pay Now
             </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Edit Payment Information Dialog */}
+        <Dialog open={editPaymentDialogOpen} onClose={() => setEditPaymentDialogOpen(false)} maxWidth="xs" fullWidth>
+          <DialogTitle sx={{ fontWeight: 700 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <PaymentIcon color="primary" />
+              Edit Payment Details
+            </Box>
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <TextField 
+                fullWidth 
+                label="Cardholder Name" 
+                name="name"
+                value={editPaymentForm.name}
+                onChange={handleEditPaymentFormChange}
+                margin="normal"
+              />
+              <TextField 
+                fullWidth 
+                label="Card Number" 
+                name="cardNumber"
+                value={editPaymentForm.cardNumber}
+                onChange={handleEditPaymentFormChange}
+                placeholder="1234 5678 9012"
+                margin="normal"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <CreditCardIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <TextField 
+                    fullWidth 
+                    label="Expiry Date" 
+                    name="expiryDate"
+                    value={editPaymentForm.expiryDate}
+                    onChange={handleEditPaymentFormChange}
+                    placeholder="MM/YY"
+                    margin="normal"
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField 
+                    fullWidth 
+                    label="CVV" 
+                    name="cvv"
+                    type="password"
+                    value={editPaymentForm.cvv}
+                    onChange={handleEditPaymentFormChange}
+                    placeholder="123"
+                    margin="normal"
+                  />
+                </Grid>
+              </Grid>
+            </Box>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2.5 }}>
+            <Button onClick={() => setEditPaymentDialogOpen(false)}>Cancel</Button>
+            <Button variant="contained" onClick={handleSavePaymentInfo} sx={{ px: 4 }}>Save</Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Edit Vehicle Information Dialog */}
+        <Dialog open={vehicleDialogOpen} onClose={() => setVehicleDialogOpen(false)} maxWidth="xs" fullWidth>
+          <DialogTitle sx={{ fontWeight: 700 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <DirectionsCarIcon color="primary" />
+              Edit Vehicle Information
+            </Box>
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ pt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <TextField 
+                fullWidth 
+                label="Vehicle Number" 
+                name="vehicleNumber"
+                value={editVehicleForm.vehicleNumber}
+                onChange={handleEditVehicleFormChange}
+                margin="normal"
+                placeholder="MH 01 AB 1234"
+                helperText="Example: MH 01 AB 1234"
+              />
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Vehicle Type</InputLabel>
+                <Select
+                  name="vehicleType"
+                  value={editVehicleForm.vehicleType}
+                  label="Vehicle Type"
+                  onChange={handleEditVehicleFormChange}
+                >
+                  <MenuItem value="car">Car</MenuItem>
+                  <MenuItem value="motorcycle">Motorcycle</MenuItem>
+                  <MenuItem value="ev">Electric Vehicle</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2.5 }}>
+            <Button onClick={() => setVehicleDialogOpen(false)}>Cancel</Button>
+            <Button variant="contained" onClick={handleSaveVehicleInfo} sx={{ px: 4 }}>Save</Button>
           </DialogActions>
         </Dialog>
 

@@ -18,11 +18,7 @@ const authMiddleware = async (req, res, next) => {
       // Enhanced role detection based on URL path
       let fallbackRole = 'user';
       
-      // Determine role from URL path with improved detection
-      if (req.originalUrl && req.originalUrl.includes('/residential')) {
-        fallbackRole = 'residential';
-        console.log('Setting development role to residential based on URL path');
-      } else if (req.originalUrl && (req.originalUrl.includes('/operators') || req.originalUrl.includes('/operator'))) {
+      if (req.originalUrl && (req.originalUrl.includes('/operators') || req.originalUrl.includes('/operator'))) {
         fallbackRole = 'operator';
         console.log('Setting development role to operator based on URL path');
       } else if (req.originalUrl && req.originalUrl.includes('/parking')) {
@@ -53,10 +49,7 @@ const authMiddleware = async (req, res, next) => {
       
       // Override role for development/testing if URL indicates a specific role
       if (process.env.NODE_ENV !== 'production') {
-        if (req.originalUrl && req.originalUrl.includes('/residential')) {
-          req.user.role = 'residential';
-          console.log('Overriding role to residential for development');
-        } else if (req.originalUrl && (req.originalUrl.includes('/operators') || req.originalUrl.includes('/operator'))) {
+        if (req.originalUrl && (req.originalUrl.includes('/operators') || req.originalUrl.includes('/operator'))) {
           req.user.role = 'operator';
           console.log('Overriding role to operator for development');
         } else if (req.originalUrl && req.originalUrl.includes('/parking')) {
@@ -73,9 +66,7 @@ const authMiddleware = async (req, res, next) => {
       
       // Enhanced role detection based on URL path for invalid tokens
       let fallbackRole = 'user';
-      if (req.originalUrl && req.originalUrl.includes('/residential')) {
-        fallbackRole = 'residential';
-      } else if (req.originalUrl && (req.originalUrl.includes('/operators') || req.originalUrl.includes('/operator'))) {
+      if (req.originalUrl && (req.originalUrl.includes('/operators') || req.originalUrl.includes('/operator'))) {
         fallbackRole = 'operator';
       } else if (req.originalUrl && req.originalUrl.includes('/parking')) {
         // For direct access to /parking endpoints, default to operator role

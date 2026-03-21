@@ -249,7 +249,7 @@ exports.getProfile = async (req, res) => {
 exports.updateProfile = async (req, res) => {
     try {
         // Fields that are allowed to be updated
-        const allowedFields = ['name', 'vehicleNumber', 'vehicleType'];
+        const allowedFields = ['name', 'vehicleNumber', 'vehicleType', 'paymentDetails'];
 
         // Filter out fields that are not allowed to be updated
         const filteredBody = {};

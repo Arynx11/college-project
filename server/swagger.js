@@ -12,7 +12,6 @@ const options = {
 This API powers the ParkEase platform, enabling:
 - **Users** to register, login, find nearby parking, and manage bookings
 - **Operators** to manage their parking lots and view analytics
-- **Residential users** to list and manage their private parking spaces
 
 ### Authentication
 Most endpoints require a **Bearer JWT token** in the Authorization header:
@@ -49,7 +48,7 @@ You can get a token by calling **POST /api/users/login** or **POST /api/users/re
             name:     { type: 'string', example: 'Arsh Sharma' },
             email:    { type: 'string', format: 'email', example: 'arsh@example.com' },
             password: { type: 'string', format: 'password', example: 'password123' },
-            role:     { type: 'string', enum: ['user', 'operator', 'residential'], example: 'user' },
+            role:     { type: 'string', enum: ['user', 'operator'], example: 'user' },
           },
         },
         UserLogin: {
@@ -58,7 +57,7 @@ You can get a token by calling **POST /api/users/login** or **POST /api/users/re
           properties: {
             email:    { type: 'string', format: 'email', example: 'arsh@example.com' },
             password: { type: 'string', format: 'password', example: 'password123' },
-            role:     { type: 'string', enum: ['user', 'operator', 'residential'], example: 'user' },
+            role:     { type: 'string', enum: ['user', 'operator'], example: 'user' },
           },
         },
         AuthResponse: {
@@ -91,7 +90,7 @@ You can get a token by calling **POST /api/users/login** or **POST /api/users/re
           required: ['name', 'type', 'totalSpots', 'pricePerHour', 'location'],
           properties: {
             name:            { type: 'string', example: 'Connaught Place Parking' },
-            type:            { type: 'string', enum: ['government', 'private', 'public', 'residential'], example: 'private' },
+            type:            { type: 'string', enum: ['government', 'private', 'public'], example: 'private' },
             totalSpots:      { type: 'integer', example: 50 },
             availableSpots:  { type: 'integer', example: 30 },
             pricePerHour:    { type: 'number', example: 40 },
@@ -160,7 +159,7 @@ You can get a token by calling **POST /api/users/login** or **POST /api/users/re
       { name: 'Parking',      description: 'Browse and manage parking lots' },
       { name: 'Bookings',     description: 'Create and manage bookings' },
       { name: 'Operators',    description: 'Operator-specific endpoints' },
-      { name: 'Residential',  description: 'Residential parking owner endpoints' },
+      { name: 'Operators',    description: 'Operator-specific endpoints' },
     ],
     paths: {
       // ═══════════════════════════════════════════════════
@@ -288,7 +287,7 @@ You can get a token by calling **POST /api/users/login** or **POST /api/users/re
         },
         post: {
           tags: ['Parking'],
-          summary: 'Create a new parking lot (operator/residential only)',
+          summary: 'Create a new parking lot (operator only)',
           security: [{ bearerAuth: [] }],
           requestBody: {
             required: true,
@@ -296,7 +295,7 @@ You can get a token by calling **POST /api/users/login** or **POST /api/users/re
           },
           responses: {
             201: { description: 'Parking lot created' },
-            403: { description: 'Only operators and residential users can create parking spaces' },
+            403: { description: 'Only operators can create parking spaces' },
           },
         },
       },
@@ -479,77 +478,6 @@ You can get a token by calling **POST /api/users/login** or **POST /api/users/re
         },
       },
 
-      // ═══════════════════════════════════════════════════
-      // RESIDENTIAL — /api/residential
-      // ═══════════════════════════════════════════════════
-      '/api/residential/parking-spaces': {
-        get: {
-          tags: ['Residential'],
-          summary: 'Get residential parking spaces owned by current user',
-          security: [{ bearerAuth: [] }],
-          responses: { 200: { description: 'Residential parking spaces' } },
-        },
-        post: {
-          tags: ['Residential'],
-          summary: 'Create a residential parking space',
-          security: [{ bearerAuth: [] }],
-          requestBody: { content: { 'application/json': { schema: { $ref: '#/components/schemas/ParkingLot' } } } },
-          responses: { 201: { description: 'Residential space created' } },
-        },
-      },
-      '/api/residential/parking-spaces/{id}': {
-        put: {
-          tags: ['Residential'],
-          summary: 'Update a residential parking space',
-          security: [{ bearerAuth: [] }],
-          parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-          requestBody: { content: { 'application/json': { schema: { $ref: '#/components/schemas/ParkingLot' } } } },
-          responses: { 200: { description: 'Updated' } },
-        },
-        delete: {
-          tags: ['Residential'],
-          summary: 'Delete a residential parking space',
-          security: [{ bearerAuth: [] }],
-          parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-          responses: { 200: { description: 'Deleted' } },
-        },
-      },
-      '/api/residential/parking-spaces/{id}/availability': {
-        patch: {
-          tags: ['Residential'],
-          summary: 'Update residential parking space availability',
-          security: [{ bearerAuth: [] }],
-          parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-          requestBody: { content: { 'application/json': { example: { availableSpots: 1 } } } },
-          responses: { 200: { description: 'Availability updated' } },
-        },
-      },
-      '/api/residential/bookings': {
-        get: {
-          tags: ['Residential'],
-          summary: 'Get bookings for residential spaces',
-          security: [{ bearerAuth: [] }],
-          responses: { 200: { description: 'Bookings list' } },
-        },
-      },
-      '/api/residential/bookings/{id}/status': {
-        patch: {
-          tags: ['Residential'],
-          summary: 'Approve or reject a booking for a residential space',
-          security: [{ bearerAuth: [] }],
-          parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }],
-          requestBody: { content: { 'application/json': { example: { status: 'approved' } } } },
-          responses: { 200: { description: 'Status updated' } },
-        },
-      },
-      '/api/residential/analytics': {
-        get: {
-          tags: ['Residential'],
-          summary: 'Get analytics for residential parking spaces',
-          security: [{ bearerAuth: [] }],
-          responses: { 200: { description: 'Analytics data' } },
-        },
-      },
     },
   },
   apis: [], // using inline definition above — no JSDoc scanning needed
