@@ -266,19 +266,30 @@ const UserDashboard = () => {
     setVehicleDialogOpen(true);
   };
 
-  const handleSaveVehicleInfo = () => {
-    // Validate Indian vehicle number format: MH 01 AB 1234
+  const handleSaveVehicleInfo = async () => {
     const vehicleRegex = /^[A-Z]{2}\s\d{2}\s[A-Z]{1,2}\s\d{4}$/;
     if (!vehicleRegex.test(editVehicleForm.vehicleNumber.toUpperCase())) {
       showNotification('Please enter vehicle number in format: MH 01 AB 1234', 'error');
       return;
     }
-    setUserProfile(prev => ({
-      ...prev,
-      vehicleNumber: editVehicleForm.vehicleNumber.toUpperCase(),
-      vehicleType: editVehicleForm.vehicleType
-    }));
-    setVehicleDialogOpen(false);
+    
+    try {
+      setLoading(true);
+      const response = await userService.updateProfile({
+        vehicleNumber: editVehicleForm.vehicleNumber.toUpperCase(),
+        vehicleType: editVehicleForm.vehicleType
+      });
+      
+      if (response && response.status === 'success') {
+        setUserProfile(response.data.user);
+        showNotification('Vehicle information updated successfully', 'success');
+        setVehicleDialogOpen(false);
+      }
+    } catch (error) {
+      showNotification(error.message || 'Failed to update vehicle information', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleOpenPaymentDetailsDialog = () => {
@@ -286,7 +297,7 @@ const UserDashboard = () => {
     setEditPaymentDialogOpen(true);
   };
 
-  const handleSavePaymentInfo = () => {
+  const handleSavePaymentInfo = async () => {
     const cardDigits = editPaymentForm.cardNumber.replace(/\D/g, '');
     const cvvDigits = editPaymentForm.cvv.replace(/\D/g, '');
     
@@ -307,7 +318,28 @@ const UserDashboard = () => {
       showNotification('Cardholder name is required', 'error');
       return;
     }
-    setEditPaymentDialogOpen(false);
+
+    try {
+      setLoading(true);
+      const response = await userService.updateProfile({
+        paymentDetails: {
+          cardNumber: editPaymentForm.cardNumber,
+          expiryDate: editPaymentForm.expiryDate,
+          cvv: editPaymentForm.cvv,
+          cardholderName: editPaymentForm.name
+        }
+      });
+      
+      if (response && response.status === 'success') {
+        setUserProfile(response.data.user);
+        showNotification('Payment details updated successfully', 'success');
+        setEditPaymentDialogOpen(false);
+      }
+    } catch (error) {
+      showNotification(error.message || 'Failed to update payment details', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEditVehicleFormChange = (e) => {
@@ -390,8 +422,19 @@ const UserDashboard = () => {
 
         // Fetch user profile
         const profileResponse = await userService.getUserProfile();
-        if (profileResponse && profileResponse.data) {
-          setUserProfile(profileResponse.data.user);
+        if (profileResponse && profileResponse.data && profileResponse.data.user) {
+          const user = profileResponse.data.user;
+          setUserProfile(user);
+          
+          // Populate edit forms if data exists in DB
+          if (user.paymentDetails) {
+            setEditPaymentForm({
+              cardNumber: user.paymentDetails.cardNumber || '123456789012',
+              expiryDate: user.paymentDetails.expiryDate || '12/25',
+              cvv: user.paymentDetails.cvv || '123',
+              name: user.paymentDetails.cardholderName || user.name
+            });
+          }
         }
 
         // Fetch user bookings
@@ -661,7 +704,16 @@ const UserDashboard = () => {
       const response = await userService.createBooking(bookingData);
 
       if (response && response.data && response.data.booking) {
-        // Close booking dialog and open payment dialog
+        // Pre-fill payment form with saved data if available
+        if (userProfile?.paymentDetails) {
+          setPaymentForm({
+            cardNumber: userProfile.paymentDetails.cardNumber || '',
+            expiryDate: userProfile.paymentDetails.expiryDate || '',
+            cvv: userProfile.paymentDetails.cvv || '',
+            name: userProfile.paymentDetails.cardholderName || userProfile.name || ''
+          });
+        }
+        
         setBookingDialogOpen(false);
         setPaymentDialogOpen(true);
       }
@@ -1296,7 +1348,7 @@ const UserDashboard = () => {
                       <Grid item xs={12}>
                         <TextField
                           label="Cardholder Name"
-                          value={editPaymentForm.name}
+                          value={userProfile?.paymentDetails?.cardholderName || userProfile?.name || 'Not provided'}
                           fullWidth
                           InputProps={{ readOnly: true }}
                         />
@@ -1304,7 +1356,7 @@ const UserDashboard = () => {
                       <Grid item xs={12}>
                         <TextField
                           label="Card Number"
-                          value={`**** **** **** ${editPaymentForm.cardNumber.slice(-4)}`}
+                          value={userProfile?.paymentDetails?.cardNumber ? `**** **** **** ${userProfile.paymentDetails.cardNumber.slice(-4)}` : '**** **** **** 1234'}
                           fullWidth
                           InputProps={{ readOnly: true }}
                         />
@@ -1312,7 +1364,7 @@ const UserDashboard = () => {
                       <Grid item xs={6}>
                         <TextField
                           label="Expiry Date"
-                          value={editPaymentForm.expiryDate}
+                          value={userProfile?.paymentDetails?.expiryDate || '12/25'}
                           fullWidth
                           InputProps={{ readOnly: true }}
                         />
@@ -1320,7 +1372,7 @@ const UserDashboard = () => {
                       <Grid item xs={6}>
                         <TextField
                           label="CVV"
-                          value="***"
+                          value={userProfile?.paymentDetails?.cvv ? '***' : '***'}
                           fullWidth
                           InputProps={{ readOnly: true }}
                         />

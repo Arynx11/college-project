@@ -40,6 +40,12 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.ObjectId,
     ref: 'Booking'
   }],
+  paymentDetails: {
+    cardNumber: String,
+    expiryDate: String,
+    cvv: String,
+    cardholderName: String
+  },
   passwordResetToken: String,
   passwordResetExpires: Date,
   createdAt: {
