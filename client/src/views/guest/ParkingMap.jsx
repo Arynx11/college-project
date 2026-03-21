@@ -55,14 +55,7 @@ const privateIcon = new Icon({
   shadowSize: [41, 41]
 });
 
-const residentialIcon = new Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
-});
+
 
 // Add a custom icon for the user's location
 const userLocationIcon = new Icon({
@@ -546,9 +539,7 @@ const ParkingMap = () => {
                       icon={
                         spot.type === 'government'
                           ? governmentIcon
-                          : spot.type === 'residential'
-                            ? residentialIcon
-                            : privateIcon
+                          : privateIcon
                       }
                     >
                       <Popup>

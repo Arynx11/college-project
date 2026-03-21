@@ -73,9 +73,6 @@ const Footer = () => {
                 Quick Links
               </Typography>
               <Stack spacing={1.2}>
-                <Link component={RouterLink} to="/search" underline="none" sx={{ ...linkStyles }}>
-                  Find Parking
-                </Link>
                 <Link component={RouterLink} to="/register" underline="none" sx={{ ...linkStyles }}>
                   Register as Operator
                 </Link>

@@ -31,9 +31,6 @@ const ProtectedRoute = ({ children, allowedRoles, redirectPath = '/' }) => {
       case 'operator':
         targetPath = '/operator';
         break;
-      case 'residential':
-        targetPath = '/residential';
-        break;
       default:
         targetPath = '/dashboard';
     }

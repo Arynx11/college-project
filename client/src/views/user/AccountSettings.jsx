@@ -36,7 +36,7 @@ import { useNavigate } from 'react-router-dom';
 import userService from '../../services/userService';
 
 const AccountSettings = () => {
-  const { isAuthenticated, userRoles, primaryRole, userName, addRole, switchRole } = useAuth();
+  const { isAuthenticated, userRole, userName } = useAuth();
   const [loading, setLoading] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
   const [notification, setNotification] = useState({
@@ -70,67 +70,6 @@ const AccountSettings = () => {
       navigate('/login');
     }
   }, [isAuthenticated, navigate]);
-
-  const handleAddRole = async (role) => {
-    setLoading(true);
-    try {
-      const success = await addRole(role);
-      if (success) {
-        setNotification({
-          open: true,
-          message: `Successfully added ${role} role to your account`,
-          severity: 'success'
-        });
-      } else {
-        throw new Error('Failed to add role');
-      }
-    } catch (error) {
-      setNotification({
-        open: true,
-        message: `Error adding role: ${error.message}`,
-        severity: 'error'
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSwitchRole = async (role) => {
-    setLoading(true);
-    try {
-      const success = await switchRole(role);
-      if (success) {
-        setNotification({
-          open: true,
-          message: `Switched to ${role} dashboard`,
-          severity: 'success'
-        });
-        
-        // Navigate to the appropriate dashboard
-        switch (role) {
-          case 'operator':
-            navigate('/operator/dashboard');
-            break;
-          case 'residential':
-            navigate('/residential/dashboard');
-            break;
-          default:
-            navigate('/dashboard');
-        }
-      } else {
-        throw new Error('Failed to switch role');
-      }
-    } catch (error) {
-      setNotification({
-        open: true,
-        message: `Error switching role: ${error.message}`,
-        severity: 'error'
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleCloseNotification = () => {
     setNotification({ ...notification, open: false });
   };
@@ -170,44 +109,12 @@ const AccountSettings = () => {
     switch (role) {
       case 'operator':
         return <BusinessIcon />;
-      case 'residential':
-        return <HomeIcon />;
       default:
         return <PersonIcon />;
     }
   };
 
-  const getVehicleTypeIcon = (type) => {
-    switch (type) {
-      case 'motorcycle':
-        return <TwoWheelerIcon />;
-      case 'ev':
-        return <EvStationIcon />;
-      default:
-        return <DirectionsCarIcon />;
-    }
-  };
 
-  const availableRoles = [
-    { 
-      id: 'user', 
-      name: 'User',
-      description: 'Search for and book parking spaces',
-      icon: <PersonIcon fontSize="large" />
-    },
-    { 
-      id: 'residential', 
-      name: 'Residential Owner',
-      description: 'List private residential parking spaces such as driveways and garages',
-      icon: <HomeIcon fontSize="large" />
-    },
-    { 
-      id: 'operator', 
-      name: 'Parking Operator',
-      description: 'Manage commercial parking lots and garages',
-      icon: <BusinessIcon fontSize="large" />
-    }
-  ];
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
@@ -280,120 +187,20 @@ const AccountSettings = () => {
           </Grid>
         </Box>
 
-        <Divider sx={{ my: 3 }} />
-
         <Typography variant="h5" gutterBottom>
-          Your Roles
+          Your Account Role
         </Typography>
-        
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          {userRoles.map((role) => (
-            <Grid item xs={12} sm={6} md={4} key={role}>
-              <Card 
-                variant="outlined"
-                sx={{ 
-                  height: '100%',
-                  position: 'relative',
-                  ...(role === primaryRole && {
-                    border: '2px solid',
-                    borderColor: 'primary.main',
-                  }),
-                }}
-              >
-                {role === primaryRole && (
-                  <Chip 
-                    label="Primary"
-                    color="primary"
-                    size="small"
-                    sx={{ 
-                      position: 'absolute', 
-                      top: 8, 
-                      right: 8 
-                    }} 
-                  />
-                )}
-                <CardContent>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
-                    {getRoleIcon(role)}
-                    <Typography variant="h6" sx={{ mt: 1 }}>
-                      {role.charAt(0).toUpperCase() + role.slice(1)}
-                    </Typography>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary">
-                    {availableRoles.find(r => r.id === role)?.description || ''}
-                  </Typography>
-                </CardContent>
-                <CardActions>
-                  {role !== primaryRole && (
-                    <Button 
-                      fullWidth 
-                      variant="contained" 
-                      onClick={() => handleSwitchRole(role)}
-                      disabled={loading}
-                    >
-                      Switch to This Role
-                    </Button>
-                  )}
-                  {role === primaryRole && (
-                    <Button 
-                      fullWidth 
-                      variant="outlined" 
-                      color="primary"
-                      disabled
-                    >
-                      Current Role
-                    </Button>
-                  )}
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-
-        <Divider sx={{ my: 3 }} />
-
-        <Typography variant="h5" gutterBottom>
-          Available Roles
-        </Typography>
-        <Typography variant="body2" color="text.secondary" paragraph>
-          Add additional roles to your account to access different features
-        </Typography>
-
-        <Grid container spacing={3}>
-          {availableRoles.filter(role => !userRoles.includes(role.id)).map((role) => (
-            <Grid item xs={12} sm={6} md={4} key={role.id}>
-              <Card variant="outlined" sx={{ height: '100%' }}>
-                <CardContent>
-                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2 }}>
-                    {role.icon}
-                    <Typography variant="h6" sx={{ mt: 1 }}>
-                      {role.name}
-                    </Typography>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary">
-                    {role.description}
-                  </Typography>
-                </CardContent>
-                <CardActions>
-                  <Button 
-                    fullWidth 
-                    variant="contained" 
-                    onClick={() => handleAddRole(role.id)}
-                    disabled={loading}
-                  >
-                    Add This Role
-                  </Button>
-                </CardActions>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-
-        {availableRoles.filter(role => !userRoles.includes(role.id)).length === 0 && (
-          <Alert severity="info" sx={{ mt: 2 }}>
-            You have all available roles already assigned to your account.
-          </Alert>
-        )}
+        <Card variant="outlined" sx={{ mb: 4, maxWidth: 300 }}>
+          <CardContent sx={{ textAlign: 'center' }}>
+            {getRoleIcon(userRole)}
+            <Typography variant="h6" sx={{ mt: 1 }}>
+              {userRole?.charAt(0).toUpperCase() + userRole?.slice(1)}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {userRole === 'operator' ? 'Commercial Parking Operator' : 'Regular Parking User'}
+            </Typography>
+          </CardContent>
+        </Card>
       </Paper>
 
       {loading && (

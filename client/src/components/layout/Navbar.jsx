@@ -135,7 +135,6 @@ const Navbar = () => {
     if (!isAuthenticated) {
       return [
         { label: "Home", path: "/" },
-        { label: "Find Parking", path: "/search" },
       ];
     }
 
@@ -146,16 +145,9 @@ const Navbar = () => {
           { label: "My Spaces", path: "/operator/spaces" },
           { label: "Bookings", path: "/operator/bookings" },
         ];
-      case "residential":
-        return [
-          { label: "Dashboard", path: "/residential" },
-          { label: "My Spaces", path: "/residential/spaces" },
-          { label: "Bookings", path: "/residential/bookings" },
-        ];
       default: // regular user
         return [
           { label: "Dashboard", path: "/dashboard" },
-          { label: "Find Parking", path: "/search" },
         ];
     }
   };
@@ -166,8 +158,6 @@ const Navbar = () => {
     switch (userRole) {
       case "operator":
         return "Parking Operator";
-      case "residential":
-        return "Residential Owner";
       default:
         return "User";
     }

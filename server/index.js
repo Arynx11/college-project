@@ -11,7 +11,6 @@ const connectDB = require('./config/database');
 const userRoutes = require('./routes/userRoutes');
 const operatorRoutes = require('./routes/operatorRoutes');
 const parkingRoutes = require('./routes/parkingRoutes');
-const residentialRoutes = require('./routes/residentialRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 
 const app = express();
@@ -56,7 +55,6 @@ app.get('/api-docs.json', (req, res) => {
 app.use('/api/users', userRoutes);
 app.use('/api/operators', operatorRoutes);
 app.use('/api/parking', parkingRoutes);
-app.use('/api/residential', residentialRoutes);
 app.use('/api/bookings', bookingRoutes);
 
 // 404 handler

@@ -32,9 +32,8 @@ const createLot = async (lotData) => {
   try {
     const token = localStorage.getItem('token');
     
-    // Ensure we're setting a valid parking type for operators (government or private)
-    if (!lotData.type || lotData.type === 'residential') {
-      lotData.type = 'private'; // Default to private if not specified or if residential
+    if (!lotData.type) {
+      lotData.type = 'private'; // Default to private if not specified
     }
     
     // Add extra headers to help with role identification

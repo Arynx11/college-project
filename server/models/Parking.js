@@ -8,7 +8,7 @@ const parkingSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['government', 'private', 'residential', 'public'],
+    enum: ['government', 'private', 'public'],
     required: true
   },
   operator: {

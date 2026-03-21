@@ -973,17 +973,7 @@ const UserDashboard = () => {
                       {isSearching ? 'Searching...' : 'Search Parking'}
                     </Button>
                   </Grid>
-                  {/* <Grid item xs={12} sm={6} md={3}>
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      onClick={fetchAllParkingLots}
-                      fullWidth
-                      sx={{ py: 1.3, fontWeight: 600 }}
-                    >
-                      Show All Parking
-                    </Button>
-                  </Grid> */}
+
                 </Grid>
               </CardContent>
             </Card>
@@ -1165,16 +1155,7 @@ const UserDashboard = () => {
               <Typography variant="body1" paragraph color="text.secondary">
                 Click the "Use My Location" button above to find available parking spaces near your current location.
               </Typography>
-              <Button
-                variant="outlined"
-                color="primary"
-                onClick={fetchAllParkingLots}
-                disabled={isSearching}
-                sx={{ mt: 2 }}
-              >
-                Show All Parking
-              </Button>
-            </Paper>
+              </Paper>
           )}
         </TabPanel>
 
