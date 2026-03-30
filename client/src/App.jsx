@@ -1,0 +1,113 @@
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+
+// Leaflet CSS
+import 'leaflet/dist/leaflet.css';
+import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
+
+// Custom theme
+import theme from './theme/theme';
+
+// Layout components
+import Navbar, { AuthProvider } from './components/layout/Navbar';
+import Footer from './components/layout/Footer';
+import ErrorBoundary from './components/layout/ErrorBoundary';
+import PasswordResetErrorBoundary from './components/auth/PasswordResetErrorBoundary';
+import ProtectedRoute from './components/routing/ProtectedRoute';
+
+// Views
+import GuestHome from './views/guest/GuestHome';
+import UserDashboard from './views/user/UserDashboard';
+import AccountSettings from './views/user/AccountSettings';
+import OperatorDashboard from './views/operator/OperatorDashboard';
+import ParkingMap from './views/guest/ParkingMap';
+
+// Auth components
+import Login from './components/auth/Login';
+import Register from './components/auth/Register';
+import ForgotPassword from './components/auth/ForgotPassword';
+import ResetPassword from './components/auth/ResetPassword';
+
+function App() {
+  return (
+    <ThemeProvider theme={theme}>
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <CssBaseline />
+        <ErrorBoundary>
+          <Router>
+            <AuthProvider>
+              <div className="app">
+                <Navbar />
+                <main>
+                  <Routes>
+                    {/* Public routes */}
+                    <Route path="/" element={<GuestHome />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route path="/search" element={<ParkingMap />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={
+                      <PasswordResetErrorBoundary>
+                        <ResetPassword />
+                      </PasswordResetErrorBoundary>
+                    } />
+                    
+                    {/* User routes - only accessible by regular users */}
+                    <Route path="/dashboard/*" element={
+                      <ProtectedRoute allowedRoles={['user']}>
+                        <UserDashboard />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/account" element={
+                      <ProtectedRoute allowedRoles={['user', 'operator']}>
+                        <AccountSettings />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/bookings" element={
+                      <ProtectedRoute allowedRoles={['user']}>
+                        <Navigate to="/dashboard?tab=bookings" replace />
+                      </ProtectedRoute>
+                    } />
+
+                    {/* Operator routes - only accessible by operators */}
+                    <Route path="/operator/*" element={
+                      <ProtectedRoute allowedRoles={['operator']}>
+                        <OperatorDashboard />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/operator/dashboard" element={
+                      <ProtectedRoute allowedRoles={['operator']}>
+                        <OperatorDashboard />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/operator/spaces" element={
+                      <ProtectedRoute allowedRoles={['operator']}>
+                        <OperatorDashboard />
+                      </ProtectedRoute>
+                    } />
+                    <Route path="/operator/bookings" element={
+                      <ProtectedRoute allowedRoles={['operator']}>
+                        <OperatorDashboard />
+                      </ProtectedRoute>
+                    } />
+
+                    {/* Fallback route - redirects to appropriate dashboard based on role */}
+                    <Route path="*" element={
+                      <Navigate to="/" replace />
+                    } />
+                  </Routes>
+                </main>
+                <Footer />
+              </div>
+            </AuthProvider>
+          </Router>
+        </ErrorBoundary>
+      </LocalizationProvider>
+    </ThemeProvider>
+  );
+}
+
+export default App;
